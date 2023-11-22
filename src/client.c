@@ -1,17 +1,20 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
+
+#include <ctype.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <string.h>
-#include <ctype.h>
+
 #include "aux.h"
 
 #define PORT "58011"
-#define IP "193.136.138.142"
+//#define IP "193.136.138.142"
+#define IP "tejo.tecnico.ulisboa.pt"
 
 int fd;
 ssize_t n;
@@ -46,7 +49,7 @@ void send_message(char buffer[]){
     /* Busca informação do host "tejo.tecnico.ulisboa.pt", na porta especificada,
     guardando a informação nas `hints` e na `res`. Caso o host seja um nome
     e não um endereço IP (como é o caso), efetua um DNS Lookup. */
-    if (getaddrinfo("tejo.tecnico.ulisboa.pt", PORT, &hints, &res) != 0) {
+    if (getaddrinfo(IP, PORT, &hints, &res) != 0) {
         printf("error in getaddrinfo");
         exit(1);
     }
@@ -77,41 +80,17 @@ void send_message(char buffer[]){
     close(fd);
 }
 
-void udp_action(char buffer[]) {
+void udp(char buffer[]) {
 
     char command[33];  
     sscanf(buffer, "%s", command);
         
     if(strcmp(command, "login") == 0){ 
         strcpy(buffer, "LIN");
-        strcat(buffer, buffer + strlen(command)); //modificar login para LIN e adicionar ao resto do conteudo 
+        strcat(buffer, buffer + strlen(command));
         if(loginUser(buffer) == 1){
             send_message(buffer);
         }
-    }
-    else if(strcmp(command, "logout") == 0){ 
-        strcpy(buffer, "LOU");
-        strcat(buffer, buffer + strlen(command));
-    }
-    else if(strcmp(command, "unregister") == 0){ 
-        strcpy(buffer, "UNR");
-        strcat(buffer, buffer + strlen(command));
-    }
-    else if(strcmp(command, "myauctions") == 0){ 
-        strcpy(buffer, "LMA");
-        strcat(buffer, buffer + strlen(command));
-    }
-    else if(strcmp(command, "mybids") == 0){ 
-        strcpy(buffer, "LMB");
-        strcat(buffer, buffer + strlen(command));
-    }
-    else if(strcmp(command, "list") == 0){ 
-        strcpy(buffer, "LST");
-        strcat(buffer, buffer + strlen(command));
-    }
-    else if(strcmp(command, "show_record") == 0){ 
-        strcpy(buffer, "SRC");
-        strcat(buffer, buffer + strlen(command));
     }
     else {
         perror("invalid input");
@@ -120,8 +99,7 @@ void udp_action(char buffer[]) {
 
 }
 
-
-int check_tcp(char buffer[]) {
+int check_if_tcp(char buffer[]) {
     size_t buffer_len = strlen(buffer);
 
     for (size_t i = 0; i < sizeof(tcp_input) / sizeof(tcp_input[0]); ++i) {
@@ -129,16 +107,16 @@ int check_tcp(char buffer[]) {
 
         // Verifica se o tamanho da palavra no buffer é igual ao tamanho do input
         if (buffer_len >= input_len && strncmp(buffer, tcp_input[i], input_len) == 0) {
-            return 1; // Correspondência encontrada
+            return 1;
         }
     }
 
-    return 0; // Nenhuma correspondência encontrada
+    return 0; 
 }
 
-void tcp_action(char buffer[]) {
+void tcp(char buffer[]) {
 
-    char command[20];  // Tamanho suficiente para armazenar a palavra
+    char command[33]; 
     sscanf(buffer, "%s", command);
 
     if(strcmp(command, "open") == 0){ 
@@ -168,10 +146,6 @@ int main() {
     fd_set inputs, newfds;
     int max_fd = STDIN_FILENO;
 
-
-    // podemos ler so a primeira letra e depois comparar com o array dessa letra, para reduzir as comparações, ou comparar com todas simplesmente
-
-
     while(1) {
 
         FD_ZERO(&inputs); 
@@ -185,22 +159,20 @@ int main() {
             exit(EXIT_FAILURE);
         }
         
-        // Check if stdin is ready for reading
         if (FD_ISSET(STDIN_FILENO, &newfds)) {
 
             char buffer[1024];
 
-            // Use fgets to read a line from stdin
             if (fgets(buffer, sizeof(buffer), stdin) == NULL) {
                 perror("fgets");
                 exit(EXIT_FAILURE);
             }
-            //strcat (buffer, "\n");
-            if (check_tcp(buffer)) {
-                tcp_action(buffer);
+
+            if (check_if_tcp(buffer)) {
+                tcp(buffer);
             }
             else {
-                udp_action(buffer);
+                udp(buffer);
             }
             
         }
