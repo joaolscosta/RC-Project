@@ -13,15 +13,6 @@
 #define PORT "58011"
 #define IP "193.136.138.142"
 
-
-
-
-
-
-
-
-
-
 int fd;
 ssize_t n;
 socklen_t addrlen; // Tamanho do endereço
@@ -37,8 +28,6 @@ struct sockaddr_in addr;
 char buffer[128]; // buffer para onde serão escritos os dados recebidos do servidor
 
 char tcp_input[][11] = {"open", "close", "show_asset", "bid"};
-/*char input_l[][4] = {"login", "logout", "myauctions", "mybids", "list"};
-char input_r[][4] = {"RLI", "RLO", "RUR", "RMA", "RMB", "RLS", "RRC", "ROA", "RCL", "RSA", "RBD"};*/
 
 void send_message(char buffer[]){
     printf("message to send->%s", buffer);
@@ -90,51 +79,39 @@ void send_message(char buffer[]){
 
 void udp_action(char buffer[]) {
 
-    char command[20];  // Tamanho suficiente para armazenar a palavra
+    char command[33];  
     sscanf(buffer, "%s", command);
         
     if(strcmp(command, "login") == 0){ 
         strcpy(buffer, "LIN");
         strcat(buffer, buffer + strlen(command)); //modificar login para LIN e adicionar ao resto do conteudo 
-        if(loginUser(buffer)){
+        if(loginUser(buffer) == 1){
             send_message(buffer);
         }
     }
     else if(strcmp(command, "logout") == 0){ 
         strcpy(buffer, "LOU");
         strcat(buffer, buffer + strlen(command));
-        function(buffer);
-        send_message(buffer);
     }
     else if(strcmp(command, "unregister") == 0){ 
         strcpy(buffer, "UNR");
         strcat(buffer, buffer + strlen(command));
-        function(buffer);
-        send_message(buffer);
     }
     else if(strcmp(command, "myauctions") == 0){ 
         strcpy(buffer, "LMA");
         strcat(buffer, buffer + strlen(command));
-        function(buffer);
-        send_message(buffer);
     }
     else if(strcmp(command, "mybids") == 0){ 
         strcpy(buffer, "LMB");
         strcat(buffer, buffer + strlen(command));
-        function(buffer);
-        send_message(buffer);
     }
     else if(strcmp(command, "list") == 0){ 
         strcpy(buffer, "LST");
         strcat(buffer, buffer + strlen(command));
-        function(buffer);
-        send_message(buffer);
     }
     else if(strcmp(command, "show_record") == 0){ 
         strcpy(buffer, "SRC");
         strcat(buffer, buffer + strlen(command));
-        function(buffer);
-        send_message(buffer);
     }
     else {
         perror("invalid input");
@@ -167,26 +144,18 @@ void tcp_action(char buffer[]) {
     if(strcmp(command, "open") == 0){ 
         strcpy(buffer, "OPA");
         strcat(buffer, buffer + strlen(command)); 
-        loginUser(buffer);
-        send_message(buffer);
     }
     else if(strcmp(command, "close") == 0){ 
         strcpy(buffer, "CLS");
         strcat(buffer, buffer + strlen(command)); 
-        loginUser(buffer);
-        send_message(buffer);
     }
     else if(strcmp(command, "show_asset") == 0){ 
         strcpy(buffer, "SAS");
         strcat(buffer, buffer + strlen(command)); 
-        loginUser(buffer);
-        send_message(buffer);
     }
     else if(strcmp(command, "bid") == 0){ 
         strcpy(buffer, "BID");
         strcat(buffer, buffer + strlen(command)); 
-        loginUser(buffer);
-        send_message(buffer);
     }
     else {
         perror("invalid input");
