@@ -7,10 +7,20 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <string.h>
-#include "1_aux.h"
+#include <ctype.h>
+#include "aux.h"
 
 #define PORT "58011"
 #define IP "193.136.138.142"
+
+
+
+
+
+
+
+
+
 
 int fd;
 ssize_t n;
@@ -130,107 +140,9 @@ void udp_action(char buffer[]) {
         perror("invalid input");
         exit(EXIT_FAILURE);
     }
-    /*
-    // Assume buffer contains some data
-    if (strncmp(buffer, "L", 1) == 0) {
-        // Determine the action based on the matched string
-        for (int i = 0; i < sizeof(input_l) / sizeof(input_l[0]); i++) {
-            switch (i) {
-                case 0: //login/LIN
-                    loginUser(buffer);
-                    send_message(buffer);
-                    break;
-                case 1: //logout/LOU
-                    logoutUser();
-                    break;
-                case 2: //myauctions/LMA
-                    requestMyAuctions();
-                    break;
-                case 3: //mybids/LMB
-                    requestAuctionsBids();
-                    break;  
-                case 4: //list/LST
-                    requestAuctions();
-                    break;  
-                
 
-                default:
-                    perror("invalid input");
-                    exit(EXIT_FAILURE);
-                    // Handle default case if needed
-                    break;
-            }
-        }
-    }
-
-    else if (strncmp(buffer, "R", 1) == 0) {
-        // Determine the action based on the matched string
-        for (int i = 0; i < sizeof(input_r) / sizeof(input_r[0]); i++) {
-            switch (i) {
-                case 0: //RLI
-                    checkUserExists();
-                    break;
-                case 1: //RLO
-                    checkUserLogged();
-                    break;
-                case 2: //RUR
-                    checkUserExistsLogged();
-                    break;
-                case 3: //RMA
-                    checkMyAuctions();
-                    break;
-                case 4: //RMB
-                    checkAuctionsBids();
-                    break;
-                case 5: //RLS
-                    checkAuctions();
-                    break;
-                case 6: //RRC
-                    detailedAuction();
-                    break;
-
-                default:
-                    perror("invalid input");
-                    exit(EXIT_FAILURE);
-                    // Handle default case if needed
-                    break;
-            }
-        }
-    }
-    
-    //starts with other character than L or R
-    else if(strncmp(buffer, "SRC", 3) == 0){ 
-        requestRecord();
-    }
-    else if(strncmp(buffer, "UNR", 3) == 0){ 
-        unregisterUsed();
-        
-    }
-    
-    else{
-        perror("invalid input");
-        exit(EXIT_FAILURE);
-    } */
-    
 }
 
-
-/*int check_tcp(char buffer[]) {
-
-    char dest[4];  
-
-    strncpy(dest, buffer, 3);
-    dest[3] = '\0';  // Null-terminate the destination string
-
-    for (size_t i = 0; i < sizeof(tcp_input) / sizeof(tcp_input[0]); ++i) {
-        if (strcmp(dest, tcp_input[i]) == 0) {
-            return 1; // Match found
-        }
-    }
-
-    return 0; // No match found
-}*/ 
-//tive de fazer uma funçao nova porque os tcp_inputs já nao têm todos o mesmo tamanho, mas nao sei se a nova está certa
 
 int check_tcp(char buffer[]) {
     size_t buffer_len = strlen(buffer);
@@ -303,7 +215,7 @@ int main() {
             perror("select");
             exit(EXIT_FAILURE);
         }
-
+        
         // Check if stdin is ready for reading
         if (FD_ISSET(STDIN_FILENO, &newfds)) {
 

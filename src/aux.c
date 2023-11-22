@@ -41,7 +41,6 @@ int requestAuctions(){
     return 0;
 }
 int checkUserExists(){
-
     return 0;
 }
 int checkUserLogged(){
@@ -68,4 +67,6 @@ int requestRecord(){
 int unregisterUsed(){
     return 0;
 }
-int function(){return 0;}
+int function(){
+    return 0;
+}
