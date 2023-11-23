@@ -88,7 +88,31 @@ void udp(char buffer[]) {
     if(strcmp(command, "login") == 0){ 
         strcpy(buffer, "LIN");
         strcat(buffer, buffer + strlen(command));
-        if(loginUser(buffer) == 1){
+        if(login_user(buffer) == 1){
+            send_message(buffer);
+        }
+    } else if(strcmp(command, "logout") == 0){ 
+        strcpy(buffer, "LOU");
+        strcat(buffer, buffer + strlen(command));
+        if(logout_user(buffer) == 1){
+            send_message(buffer);
+        }
+    } else if(strcmp(command, "unregister") == 0){ 
+        strcpy(buffer, "UNR");
+        strcat(buffer, buffer + strlen(command));
+        if(unregister_user(buffer) == 1){
+            send_message(buffer);
+        }
+    } else if(strcmp(command, "myactions") == 0){ 
+        strcpy(buffer, "LMA");
+        strcat(buffer, buffer + strlen(command));
+        if(myactions_user(buffer) == 1){
+            send_message(buffer);
+        }
+    } else if(strcmp(command, "mybids") == 0){ 
+        strcpy(buffer, "LMB");
+        strcat(buffer, buffer + strlen(command));
+        if(mybids_user(buffer) == 1){
             send_message(buffer);
         }
     }

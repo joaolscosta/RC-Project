@@ -1,20 +1,11 @@
 #ifndef AUX_H
 #define AUX_H
 
-int loginUser(char buffer[]);
-int logoutUser();
-int requestMyAuctions();
-int requestAuctionsBids();
-int requestAuctions();
-int checkUserExists();
-int checkUserLogged();
-int checkUserExistsLogged();
-int checkMyAuctions();
-int checkAuctionsBids();
-int checkAuctions();
-int detailedAuction();
-int requestRecord();
-int unregisterUsed();
-int function();
+int verify_user_credentials(char buffer[]);
+int login_user(char buffer[]);
+int logout_user(char buffer[]);
+int unregister_user(char buffer[]);
+int myactions_user(char buffer[]);
+int mybids_user(char buffer[]);
 
 #endif
