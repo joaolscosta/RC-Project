@@ -1,5 +1,5 @@
-#ifndef AUX_H
-#define AUX_H
+#ifndef ACTIONS_H
+#define ACTIONS_H
 
 int verify_user_credentials(char buffer[]);
 int login_user(char buffer[]);

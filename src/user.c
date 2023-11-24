@@ -10,7 +10,7 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 
-#include "aux.h"
+#include "actions.h"
 
 #define PORT "58011"
 //#define IP "193.136.138.142"

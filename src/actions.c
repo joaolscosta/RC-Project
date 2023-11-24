@@ -1,4 +1,4 @@
-#include "aux.h"
+#include "actions.h"
 #include "string.h"
 #include "stdio.h"
 #include "ctype.h"
