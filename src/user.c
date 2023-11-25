@@ -34,6 +34,9 @@ char buffer[128]; // buffer para onde serão escritos os dados recebidos do serv
 
 char tcp_input[][11] = {"open", "close", "show_asset", "bid"};
 
+char *ASIP = DEFAULT_HOST;
+char *ASport = DEFAULT_PORT;
+
 void send_message(char buffer[])
 {
     printf("message to send->%s", buffer);
@@ -199,8 +202,6 @@ void tcp(char buffer[])
 void user_arguments(int argc, char *argv[])
 {
     int opt;
-    char *ASIP = DEFAULT_HOST;
-    char *ASport = DEFAULT_PORT;
     while ((opt = getopt(argc, argv, "n:p:")) != -1)
     {
         switch (opt)

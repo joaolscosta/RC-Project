@@ -19,6 +19,9 @@ struct addrinfo udp_hints, *udp_res;
 struct sockaddr_in udp_addr;
 char buffer[128];
 
+char *ASport = DEFAULT_PORT;
+int verbose = 0;
+
 void server()
 {
     // UDP setup
@@ -133,8 +136,6 @@ void server()
 void server_arguments(int argc, char *argv[])
 {
     int opt;
-    char *ASport = DEFAULT_PORT;
-    int verbose = 0;
     while ((opt = getopt(argc, argv, "p:v")) != -1)
     {
         switch (opt)
