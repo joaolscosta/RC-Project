@@ -6,13 +6,15 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/select.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 
 #include "actions.h"
 
-#define PORT "58011"
+#define DEFAULT_PORT "58011"
+#define DEFAULT_HOST "localhost"
 // #define IP "193.136.138.142"
 #define IP "tejo.tecnico.ulisboa.pt"
 
@@ -51,7 +53,7 @@ void send_message(char buffer[])
     /* Busca informação do host "tejo.tecnico.ulisboa.pt", na porta especificada,
     guardando a informação nas `hints` e na `res`. Caso o host seja um nome
     e não um endereço IP (como é o caso), efetua um DNS Lookup. */
-    if (getaddrinfo(IP, PORT, &hints, &res) != 0)
+    if (getaddrinfo(IP, DEFAULT_PORT, &hints, &res) != 0)
     {
         printf("error in getaddrinfo");
         exit(1);
@@ -192,6 +194,31 @@ void tcp(char buffer[])
         perror("invalid input");
         exit(EXIT_FAILURE);
     }
+}
+
+void user_arguments(int argc, char *argv[])
+{
+    int opt;
+    char *ASIP = DEFAULT_HOST;
+    char *ASport = DEFAULT_PORT;
+    while ((opt = getopt(argc, argv, "n:p:")) != -1)
+    {
+        switch (opt)
+        {
+        case 'n':
+            ASIP = optarg;
+            break;
+        case 'p':
+            // Probbly cant convert immediatly may cause errors pass through string and use validate_port function
+            ASport = optarg;
+            break;
+        default:
+            abort();
+            // exit(EXIT_FAILURE);
+        }
+    }
+
+    // validate_port(ASport);   Used in both files may be create new .c file
 }
 
 int main()

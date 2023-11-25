@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include <sys/select.h>
 
-#define PORT "58011"
+#define DEFAULT_PORT "58011"
 
 int udp_fd;
 int tcp_fd;
@@ -34,7 +34,7 @@ void server()
     udp_hints.ai_socktype = SOCK_DGRAM;
     udp_hints.ai_flags = AI_PASSIVE;
 
-    if (getaddrinfo(NULL, PORT, &udp_hints, &udp_res) != 0)
+    if (getaddrinfo(NULL, DEFAULT_PORT, &udp_hints, &udp_res) != 0)
     {
         perror("getaddrinfo");
         exit(1);
@@ -62,7 +62,7 @@ void server()
     memset(&tcp_addr, 0, sizeof(tcp_addr));
     tcp_addr.sin_family = AF_INET;
     tcp_addr.sin_addr.s_addr = INADDR_ANY;
-    tcp_addr.sin_port = htons(atoi(PORT));
+    tcp_addr.sin_port = htons(atoi(DEFAULT_PORT));
 
     if (bind(tcp_fd, (struct sockaddr *)&tcp_addr, sizeof(tcp_addr)) == -1)
     {
@@ -130,7 +130,31 @@ void server()
     close(tcp_fd);
 }
 
-int main()
+void server_arguments(int argc, char *argv[])
+{
+    int opt;
+    char *ASport = DEFAULT_PORT;
+    int verbose = 0;
+    while ((opt = getopt(argc, argv, "p:v")) != -1)
+    {
+        switch (opt)
+        {
+        case 'p':
+            ASport = optarg;
+            break;
+        case 'v':
+            verbose = 1;
+            break;
+        default:
+            abort();
+            // exit(EXIT_FAILURE);
+        }
+    }
+
+    // validate_port(ASport);   Used in both files may be create new .c file
+}
+
+int main(int argc, char const *argv[])
 {
     server();
     return 0;
