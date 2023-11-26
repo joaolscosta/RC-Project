@@ -14,6 +14,8 @@
 
 ## Ideias:
 - As funções do actions estão todas super semelhantes faz questionar o pq de ter tanta função diferente que faz o msm. Talvez tornar mais modular
+(Men então não é que eu fiz as funções de verificação e depois estava a verificar as verificações AHAHAHAH já meti aquilo como queria thanks)
+
 - 
 
 ## Dúvidas:

@@ -33,6 +33,8 @@ int verify_user_credentials(char buffer[])
     return 1;
 }
 
+
+
 int verify_UID(char buffer[])
 {
     char command[20], uid[8];
@@ -55,61 +57,25 @@ int verify_UID(char buffer[])
 
 int login_user(char buffer[])
 {
-
-    if (verify_user_credentials(buffer) == 1)
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
+    return verify_user_credentials(buffer);
 }
 
 int logout_user(char buffer[])
 {
-    if (verify_user_credentials(buffer) == 1)
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
+    return verify_user_credentials(buffer);
 }
 
 int unregister_user(char buffer[])
 {
-    if (verify_user_credentials(buffer) == 1)
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
+    return verify_user_credentials(buffer);
 }
 
 int myactions_user(char buffer[])
 {
-    if (verify_UID(buffer) == 1)
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
+    return verify_UID(buffer);
 }
 
 int mybids_user(char buffer[])
 {
-    if (verify_UID(buffer) == 1)
-    {
-        return 1;
-    }
-    else
-    {
-        return 0;
-    }
+    return verify_UID(buffer);
 }
