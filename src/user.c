@@ -145,7 +145,16 @@ void udp(char buffer[])
     {
         strcpy(buffer, "LST");
         strcat(buffer, buffer + strlen(command));
-        if (mybids_user(buffer) == 1)
+        if (list_user(buffer) == 1)
+        {
+            send_message(buffer);
+        }
+    }
+    else if (strcmp(command, "show_record") == 0)
+    {
+        strcpy(buffer, "LST");
+        strcat(buffer, buffer + strlen(command));
+        if (show_record_user(buffer) == 1)
         {
             send_message(buffer);
         }
