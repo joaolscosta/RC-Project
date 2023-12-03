@@ -8,7 +8,7 @@ int verify_AID(char buffer[]);
 // UDP
 int login_user(char buffer[]);
 int logout_user(char buffer[]);
-int unregister_user(char buffer[]);
+//int unregister_user(char buffer[]);
 int myactions_user(char buffer[]);
 int mybids_user(char buffer[]);
 int list_user(char buffer[]);

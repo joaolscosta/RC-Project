@@ -80,13 +80,13 @@ int login_user(char buffer[])
 
 int logout_user(char buffer[])
 {
-    return verify_user_credentials(buffer);
+    return verify_UID(buffer);
 }
 
-int unregister_user(char buffer[])
+/*int unregister_user(char buffer[])
 {
     return verify_user_credentials(buffer);
-}
+}*/
 
 int myactions_user(char buffer[])
 {

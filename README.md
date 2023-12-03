@@ -20,4 +20,8 @@
 
 ## Dúvidas:
 
+- No unregister temos que verificar se o cliente está logado no cliente ou no servidor?
+
+- Onde é que vamos armazenar os dados? Só porque estou com dificuldades em perceber o que se faz para ver se já existe algum utilizador resgistado ou assim
+
       

@@ -118,10 +118,7 @@ void udp(char buffer[])
     {
         strcpy(buffer, "UNR");
         strcat(buffer, buffer + strlen(command));
-        if (unregister_user(buffer) == 1)
-        {
-            send_message(buffer);
-        }
+        send_message(buffer);
     }
     else if (strcmp(command, "myactions") == 0)
     {
@@ -158,6 +155,10 @@ void udp(char buffer[])
         {
             send_message(buffer);
         }
+    }
+    else if (strcmp(command, "exit") == 0)
+    {
+        // first do logout if there is any logged in then exit
     }
     else
     {
