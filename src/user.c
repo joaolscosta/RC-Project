@@ -141,6 +141,15 @@ void udp(char buffer[])
             send_message(buffer);
         }
     }
+    else if (strcmp(command, "list") == 0)
+    {
+        strcpy(buffer, "LST");
+        strcat(buffer, buffer + strlen(command));
+        if (mybids_user(buffer) == 1)
+        {
+            send_message(buffer);
+        }
+    }
     else
     {
         perror("invalid input");
