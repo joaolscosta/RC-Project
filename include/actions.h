@@ -2,6 +2,7 @@
 #define ACTIONS_H
 
 #define UID_SIZE 6
+#define AID_SIZE 3
 #define PASS_SIZE 8
 
 typedef struct User
@@ -12,6 +13,7 @@ typedef struct User
 
 typedef struct Auction
 {
+    char aid[AID_SIZE + 1];
     char name[11]; // Define 11
     // asset(image)
     float start_value;
@@ -46,16 +48,15 @@ void create_pass_file(User user);
 void create_login_file(User user);
 void create_hosted_folder(User user);
 void create_bidded_folder(User user);
-// void create_hosted_auction_file(User user, Auction auc);
-// void create_bidded_auction_file(User user, Auction auc);
+void create_hosted_auction_file(User user, Auction auc);
+void create_bidded_auction_file(User user, Auction auc);
 //   Auctions
-/*
 void create_auction_folder(Auction auc);
 void create_start_file(Auction auc);
 void create_asset(Auction auc);
 void create_end_file(Auction auc);
-void create_
- */
+void create_bids_folder(Auction auc);
+void create_bid_file(Auction auc);
 // LookUps
 
 /**/

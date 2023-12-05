@@ -7,6 +7,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <time.h>
 
 User parse_user_credentials(char buffer[])
 {
@@ -183,13 +184,13 @@ void create_hosted_folder(User user)
     char hosted_folder_path[26];
     // N sei se é necessário checkar se o folder do user existe primeiro
     sprintf(hosted_folder_path, "ASDIR/USERS/%s/HOSTED", user.uid);
-    if (mkdir(hosted_folder_path, 0777))
+    if (mkdir(hosted_folder_path, 0777) == 0)
     {
-        printf("Created Hosted folder sucessfully");
+        // printf("Created Hosted folder sucessfully");
     }
     else
     {
-        perror("Error creating user folder");
+        perror("Error creating hosted folder");
     }
 }
 
@@ -200,6 +201,103 @@ void create_bidded_folder(User user)
     sprintf(bidded_folder_Path, "ASDIR/USERS/%s/BIDDED", user.uid);
     if (mkdir(bidded_folder_Path, 0777) == 0)
     {
-        printf("test");
+        // printf("Created Hosted folder sucessfully");
     }
+    else
+    {
+        perror("Error creating bidded folder");
+    }
+}
+
+void create_hosted_auction_file(User user, Auction auc)
+{
+    printf("...");
+}
+
+void create_bidded_auction_file(User user, Auction auc)
+{
+    printf("...");
+}
+
+void create_auction_folder(Auction auc)
+{
+    // create the User folder
+    char folder_Path[22];
+    sprintf(folder_Path, "ASDIR/AUCTIONS/%s", auc.aid);
+    if (mkdir(folder_Path, 0777) == 0)
+    {
+        create_start_file(auc);
+        create_asset_file(auc);
+        create_end_file(auc);
+        create_bids_folder(auc);
+    }
+    else
+    {
+        perror("Error creating auction folder");
+    }
+}
+
+void create_start_file(Auction auc)
+{
+    char start_file_path[33];
+    // N sei se é necessário checkar se o folder do user existe primeiro
+    sprintf(start_file_path, "ASDIR/AUCTIONS/%s/START_%s.txt", auc.aid, auc.aid);
+
+    FILE *start_file = fopen(start_file_path, "w");
+
+    if (start_file != NULL)
+    {
+        // "contem toda a informacao relevante para o decurso do leilao" whatever this means
+        fprintf(start_file, "%s\n%s", auc.name, auc.start_value);
+        fclose(start_file);
+        // printf("Login file created successfully: %s\n", login_file_path);
+    }
+    else
+    {
+        perror("Error creating start file");
+    }
+}
+
+void create_asset(Auction auc)
+{
+    printf("...");
+}
+
+void create_end_file(Auction auc)
+{
+    char end_file_path[31];
+    // N sei se é necessário checkar se o folder do user existe primeiro
+    sprintf(end_file_path, "ASDIR/AUCTIONS/%s/END_%s.txt", auc.aid, auc.aid);
+
+    FILE *end_file = fopen(end_file_path, "w");
+
+    if (end_file != NULL)
+    {
+        fclose(end_file);
+        // printf("Login file created successfully: %s\n", login_file_path);
+    }
+    else
+    {
+        perror("Error creating start file");
+    }
+}
+
+void create_bids_folder(Auction auc)
+{
+    char bids_folder_Path[26];
+    // N sei se é necessário checkar se o folder do user existe primeiro
+    sprintf(bids_folder_Path, "ASDIR/AUCTIONS/%s/BIDS", auc.aid);
+    if (mkdir(bids_folder_Path, 0777) == 0)
+    {
+        // printf("Created Hosted folder sucessfully");
+    }
+    else
+    {
+        perror("Error creating bidded folder");
+    }
+}
+
+void create_bid_file(Auction auc)
+{
+    printf("...");
 }
