@@ -76,20 +76,60 @@ void message_handle(ssize_t n, char buffer[], char message_sent[])
         if (strcmp(status, "OK") == 0)
         {
             //! NECESSÁRIO VERIFICAR SE JÁ DEU LOGIN E SE SIM MENSAGEM DIFERENTE?
-            printf("User logged in successfuly.\n");
+            printf("User logged in successfully.\n");
         }
         else if (strcmp(status, "NOK") == 0)
         {
-            printf("Incorrect match logging user.\n");
+            printf("Credentials invalid.\n");
         }
-        else if (strcmp(message_received, "REG") == 0)
+        else if (strcmp(status, "REG") == 0)
         {
-            printf("New user registed.");
+            printf("New user registered.\n"); // Adicionando a mensagem de registro
+        }
+        else
+        {
+            printf("Unknown status received: %s\n", status); // Mensagem para outros status não reconhecidos
+        }
+    }
+    else if (strcmp(message_received, "RLO") == 0)
+    {
+        if (strcmp(status, "OK") == 0)
+        {
+            //! NECESSÁRIO VERIFICAR SE JÁ DEU LOGIN E SE SIM MENSAGEM DIFERENTE?
+            printf("User loggout successfully.\n");
+        }
+        else if (strcmp(status, "NOK") == 0)
+        {
+            printf("Impossible to loggout user.\n");
+        }
+        else
+        {
+            printf("Unknown status received: %s\n", status); // Mensagem para outros status não reconhecidos
+        }
+    }
+    else if (strcmp(message_received, "RUR") == 0)
+    {
+        if (strcmp(status, "OK") == 0)
+        {
+            //! NECESSÁRIO VERIFICAR SE JÁ DEU LOGIN E SE SIM MENSAGEM DIFERENTE?
+            printf("User unregisted successfully.\n");
+        }
+        else if (strcmp(status, "NOK") == 0)
+        {
+            printf("Can't unregisterer user.\n");
+        }
+        else if (strcmp(status, "UNR") == 0)
+        {
+            printf("User is not registered.\n"); // Adicionando a mensagem de registro
+        }
+        else
+        {
+            printf("Unknown status received: %s\n", status); // Mensagem para outros status não reconhecidos
         }
     }
     else
     {
-        printf("Invalid handle input.");
+        printf("Invalid handle input.\n");
     }
 
     // write(1, "echo: ", 6);
@@ -112,6 +152,7 @@ void received_udp_message(char buffer[])
 
     message_handle(n, buffer, message_sent);
 
+    memset(buffer, 0, sizeof(buffer));
     freeaddrinfo(res);
     close(fd);
 }
@@ -126,27 +167,32 @@ void udp(char buffer[])
     {
         strcpy(buffer, "LIN");
         strcat(buffer, buffer + strlen(command));
-        if (login_user(buffer) == 1)
+        if (login_user(buffer))
         {
             send_udp_message(buffer);
             received_udp_message(buffer);
         }
     }
-    /*
+
     else if (strcmp(command, "logout") == 0)
     {
         strcpy(buffer, "LOU");
         strcat(buffer, buffer + strlen(command));
-        if (logout_user(buffer) == 1)
+        if (logout_user(buffer))
         {
-            send_message(buffer);
+            send_udp_message(buffer);
+            received_udp_message(buffer);
         }
     }
     else if (strcmp(command, "unregister") == 0)
     {
         strcpy(buffer, "UNR");
         strcat(buffer, buffer + strlen(command));
-        send_message(buffer);
+        if (unregister_user(buffer))
+        {
+            send_udp_message(buffer);
+            received_udp_message(buffer);
+        }
     }
     else if (strcmp(command, "myactions") == 0)
     {
@@ -154,9 +200,11 @@ void udp(char buffer[])
         strcat(buffer, buffer + strlen(command));
         if (myactions_user(buffer) == 1)
         {
-            send_message(buffer);
+            send_udp_message(buffer);
+            received_udp_message(buffer);
         }
     }
+    /*
     else if (strcmp(command, "mybids") == 0)
     {
         strcpy(buffer, "LMB");
