@@ -37,55 +37,81 @@ char tcp_input[][11] = {"open", "close", "show_asset", "bid"};
 char *ASIP = DEFAULT_HOST;
 char *ASport = DEFAULT_PORT;
 
-void send_message(char buffer[])
+void send_udp_message(char buffer[])
 {
-    printf("message to send->%s", buffer);
-    /* Cria um socket UDP (SOCK_DGRAM) para IPv4 (AF_INET).
-    É devolvido um descritor de ficheiro (fd) para onde se deve comunicar. */
+    // printf("message to send->%s", buffer);
+
     fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd == -1)
     {
         exit(1);
     }
 
-    /* Preenche a estrutura com 0s e depois atribui a informação já conhecida da ligação */
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;      // IPv4
     hints.ai_socktype = SOCK_DGRAM; // UDP socket
 
-    /* Busca informação do host "tejo.tecnico.ulisboa.pt", na porta especificada,
-    guardando a informação nas `hints` e na `res`. Caso o host seja um nome
-    e não um endereço IP (como é o caso), efetua um DNS Lookup. */
     if (getaddrinfo(IP, DEFAULT_PORT, &hints, &res) != 0)
     {
         printf("error in getaddrinfo");
         exit(1);
     }
-
-    /* Envia para o `fd` (socket) a mensagem "Hello!\n" com o tamanho 20.
-       Não são passadas flags (0), e é passado o endereço de destino.
-       É apenas aqui criada a ligação ao servidor. */
     n = sendto(fd, buffer, 20, 0, res->ai_addr, res->ai_addrlen);
     if (n == -1)
     {
         exit(1);
     }
+}
 
-    /* Recebe 128 Bytes do servidor e guarda-os no buffer.
-       As variáveis `addr` e `addrlen` não são usadas pois não foram inicializadas. */
+void message_handle(ssize_t n, char buffer[], char message_sent[])
+{
+    char message_received[30];
+    char status[30]; // Variável para armazenar o status
+
+    memset(message_received, 0, sizeof(message_received));
+    sscanf(buffer, "%s %s", message_received, status);
+
+    if (strcmp(message_received, "RLI") == 0)
+    {
+        if (strcmp(status, "OK") == 0)
+        {
+            //! NECESSÁRIO VERIFICAR SE JÁ DEU LOGIN E SE SIM MENSAGEM DIFERENTE?
+            printf("User logged in successfuly.\n");
+        }
+        else if (strcmp(status, "NOK") == 0)
+        {
+            printf("Incorrect match logging user.\n");
+        }
+        else if (strcmp(message_received, "REG") == 0)
+        {
+            printf("New user registed.");
+        }
+    }
+    else
+    {
+        printf("Invalid handle input.");
+    }
+
+    // write(1, "echo: ", 6);
+    // write(1, buffer, n);
+}
+
+void received_udp_message(char buffer[])
+{
+    char message_sent[100];
+    strcpy(message_sent, buffer);
+
     addrlen = sizeof(addr);
-    n = recvfrom(fd, buffer, 128, 0, (struct sockaddr *)&addr, &addrlen);
+
+    memset(buffer, 0, sizeof(buffer));
+    n = recvfrom(fd, buffer, 8192, 0, (struct sockaddr *)&addr, &addrlen);
     if (n == -1)
     {
         exit(1);
     }
 
-    /* Imprime a mensagem "echo" e o conteúdo do buffer (ou seja, o que foi recebido
-    do servidor) para o STDOUT (fd = 1) */
-    write(1, "echo: ", 6);
-    write(1, buffer, n);
+    message_handle(n, buffer, message_sent);
 
-    /* Desaloca a memória da estrutura `res` e fecha o socket */
     freeaddrinfo(res);
     close(fd);
 }
@@ -102,9 +128,11 @@ void udp(char buffer[])
         strcat(buffer, buffer + strlen(command));
         if (login_user(buffer) == 1)
         {
-            send_message(buffer);
+            send_udp_message(buffer);
+            received_udp_message(buffer);
         }
     }
+    /*
     else if (strcmp(command, "logout") == 0)
     {
         strcpy(buffer, "LOU");
@@ -160,6 +188,7 @@ void udp(char buffer[])
     {
         // first do logout if there is any logged in then exit
     }
+    */
     else
     {
         perror("invalid input");
@@ -263,7 +292,7 @@ int main()
         if (FD_ISSET(STDIN_FILENO, &newfds))
         {
 
-            char buffer[1024];
+            char buffer[8192];
 
             if (fgets(buffer, sizeof(buffer), stdin) == NULL)
             {
