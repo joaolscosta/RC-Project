@@ -71,7 +71,9 @@ void message_handle(ssize_t n, char buffer[], char message_sent[])
     memset(message_received, 0, sizeof(message_received));
     sscanf(buffer, "%s %s", message_received, status);
 
-    if (strcmp(message_received, "RLI") == 0)
+    // printf("%s %s\n", message_received, status);
+
+    if (strcmp(message_received, "RLI") == 0) // Resposta do Login
     {
         if (strcmp(status, "OK") == 0)
         {
@@ -84,18 +86,17 @@ void message_handle(ssize_t n, char buffer[], char message_sent[])
         }
         else if (strcmp(status, "REG") == 0)
         {
-            printf("New user registered.\n"); // Adicionando a mensagem de registro
+            printf("New user registered.\n");
         }
         else
         {
-            printf("Unknown status received: %s\n", status); // Mensagem para outros status não reconhecidos
+            printf("Unknown status received: %s\n", status);
         }
     }
-    else if (strcmp(message_received, "RLO") == 0)
+    else if (strcmp(message_received, "RLO") == 0) // Reposta de Logout
     {
         if (strcmp(status, "OK") == 0)
         {
-            //! NECESSÁRIO VERIFICAR SE JÁ DEU LOGIN E SE SIM MENSAGEM DIFERENTE?
             printf("User loggout successfully.\n");
         }
         else if (strcmp(status, "NOK") == 0)
@@ -104,14 +105,13 @@ void message_handle(ssize_t n, char buffer[], char message_sent[])
         }
         else
         {
-            printf("Unknown status received: %s\n", status); // Mensagem para outros status não reconhecidos
+            printf("Unknown status received: %s\n", status);
         }
     }
-    else if (strcmp(message_received, "RUR") == 0)
+    else if (strcmp(message_received, "RUR") == 0) // Resposta de Unregister
     {
         if (strcmp(status, "OK") == 0)
         {
-            //! NECESSÁRIO VERIFICAR SE JÁ DEU LOGIN E SE SIM MENSAGEM DIFERENTE?
             printf("User unregisted successfully.\n");
         }
         else if (strcmp(status, "NOK") == 0)
@@ -120,11 +120,45 @@ void message_handle(ssize_t n, char buffer[], char message_sent[])
         }
         else if (strcmp(status, "UNR") == 0)
         {
-            printf("User is not registered.\n"); // Adicionando a mensagem de registro
+            printf("User is not registered.\n");
         }
         else
         {
-            printf("Unknown status received: %s\n", status); // Mensagem para outros status não reconhecidos
+            printf("Unknown status received: %s\n", status);
+        }
+    }
+    else if (strcmp(message_received, "RMA") == 0) // Resposta de MyActions
+    {
+        if (strcmp(status, "NOK") == 0)
+        {
+            printf("User has no ongoing actions.\n");
+        }
+        else if (strcmp(status, "OK") == 0)
+        {
+            printf("User Actions:\n");
+            write(1, "echo: ", 6);
+            write(1, buffer, n);
+        }
+        else
+        {
+            printf("Unknown status received: %s\n", status);
+        }
+    }
+    else if (strcmp(message_received, "RMB") == 0) // Resposta de MyActions
+    {
+        if (strcmp(status, "NOK") == 0)
+        {
+            printf("User has no ongoing bids.\n");
+        }
+        else if (strcmp(status, "OK") == 0)
+        {
+            printf("User Bids:\n");
+            write(1, "echo: ", 6);
+            write(1, buffer, n);
+        }
+        else
+        {
+            printf("Unknown status received: %s\n", status);
         }
     }
     else
@@ -194,7 +228,7 @@ void udp(char buffer[])
             received_udp_message(buffer);
         }
     }
-    else if (strcmp(command, "myactions") == 0)
+    else if (strcmp(command, "myauctions") == 0)
     {
         strcpy(buffer, "LMA");
         strcat(buffer, buffer + strlen(command));
@@ -204,16 +238,17 @@ void udp(char buffer[])
             received_udp_message(buffer);
         }
     }
-    /*
     else if (strcmp(command, "mybids") == 0)
     {
         strcpy(buffer, "LMB");
         strcat(buffer, buffer + strlen(command));
         if (mybids_user(buffer) == 1)
         {
-            send_message(buffer);
+            send_udp_message(buffer);
+            received_udp_message(buffer);
         }
     }
+    /*
     else if (strcmp(command, "list") == 0)
     {
         strcpy(buffer, "LST");
@@ -242,6 +277,7 @@ void udp(char buffer[])
         perror("invalid input");
         exit(EXIT_FAILURE);
     }
+    memset(buffer, 0, sizeof(buffer));
 }
 
 int check_if_tcp(char buffer[])
