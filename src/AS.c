@@ -1,14 +1,6 @@
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-#include <string.h>
-#include <stdio.h>
-#include <sys/select.h>
+#include "actions.h"
 
+#define GROUP_PORT "58105"
 #define DEFAULT_PORT "58011"
 
 int udp_fd;
@@ -19,7 +11,7 @@ struct addrinfo udp_hints, *udp_res;
 struct sockaddr_in udp_addr;
 char buffer[128];
 
-char *ASport = DEFAULT_PORT;
+char *ASport = DEFAULT_PORT; // Chanhge to GROUO PORT
 int verbose = 0;
 
 void server()
@@ -37,7 +29,7 @@ void server()
     udp_hints.ai_socktype = SOCK_DGRAM;
     udp_hints.ai_flags = AI_PASSIVE;
 
-    if (getaddrinfo(NULL, DEFAULT_PORT, &udp_hints, &udp_res) != 0)
+    if (getaddrinfo(NULL, ASport, &udp_hints, &udp_res) != 0)
     {
         perror("getaddrinfo");
         exit(1);
@@ -65,7 +57,7 @@ void server()
     memset(&tcp_addr, 0, sizeof(tcp_addr));
     tcp_addr.sin_family = AF_INET;
     tcp_addr.sin_addr.s_addr = INADDR_ANY;
-    tcp_addr.sin_port = htons(atoi(DEFAULT_PORT));
+    tcp_addr.sin_port = htons(atoi(ASport));
 
     if (bind(tcp_fd, (struct sockaddr *)&tcp_addr, sizeof(tcp_addr)) == -1)
     {
@@ -84,8 +76,7 @@ void server()
         FD_ZERO(&all_fds_read);
         FD_SET(udp_fd, &all_fds_read);
         FD_SET(tcp_fd, &all_fds_read);
-        max_fd = udp_fd + tcp_fd;
-
+        max_fd = (udp_fd > tcp_fd) ? udp_fd : tcp_fd;
         if (select(max_fd + 1, &all_fds_read, NULL, NULL, NULL) < 0)
         {
             perror("select");
@@ -95,7 +86,6 @@ void server()
         if (FD_ISSET(udp_fd, &all_fds_read))
         {
             udp_addrlen = sizeof(udp_addr);
-
             if ((n = recvfrom(udp_fd, buffer, sizeof(buffer), 0, (struct sockaddr *)&udp_addr, &udp_addrlen)) == -1)
             {
                 perror("recvfrom");
@@ -157,6 +147,8 @@ void server_arguments(int argc, char *argv[])
 
 int main(int argc, char const *argv[])
 {
+    printf("Hello");
+    server_arguments(argc, argv);
     server();
     return 0;
 }

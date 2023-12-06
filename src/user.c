@@ -1,20 +1,8 @@
-#include <unistd.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-
-#include <ctype.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/select.h>
-#include <netinet/in.h>
-#include <arpa/inet.h>
-#include <netdb.h>
-
 #include "actions.h"
 
+#define GROUP_PORT "58105"
 #define DEFAULT_PORT "58011"
-#define DEFAULT_HOST "localhost"
+#define LOCAL_HOST "localhost" // CASO DEFAULT DPS DO TEJO
 // #define IP "193.136.138.142"
 #define IP "tejo.tecnico.ulisboa.pt"
 
@@ -34,7 +22,7 @@ char buffer[128]; // buffer para onde serão escritos os dados recebidos do serv
 
 char tcp_input[][11] = {"open", "close", "show_asset", "bid"};
 
-char *ASIP = DEFAULT_HOST;
+char *ASIP = IP;
 char *ASport = DEFAULT_PORT;
 
 void send_udp_message(char buffer[])
@@ -51,9 +39,9 @@ void send_udp_message(char buffer[])
     hints.ai_family = AF_INET;      // IPv4
     hints.ai_socktype = SOCK_DGRAM; // UDP socket
 
-    if (getaddrinfo(IP, DEFAULT_PORT, &hints, &res) != 0)
+    if (getaddrinfo(ASIP, ASport, &hints, &res) != 0)
     {
-        printf("error in getaddrinfo");
+        printf("error in getaddrinfo\n");
         exit(1);
     }
     n = sendto(fd, buffer, 20, 0, res->ai_addr, res->ai_addrlen);
@@ -384,8 +372,10 @@ void user_arguments(int argc, char *argv[])
     // validate_port(ASport);   Used in both files may be create new .c file
 }
 
-int main()
+int main(int argc, char const *argv[])
 {
+    user_arguments(argc, argv);
+
     fd_set inputs, newfds;
     int max_fd = STDIN_FILENO;
 
@@ -424,4 +414,5 @@ int main()
             }
         }
     }
+    return 0;
 }

@@ -1,9 +1,7 @@
 #ifndef ACTIONS_H
 #define ACTIONS_H
 
-#include "string.h"
-#include "stdio.h"
-#include "ctype.h"
+#include <ctype.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <sys/stat.h>
@@ -11,6 +9,13 @@
 #include <fcntl.h>
 #include <errno.h>
 #include <time.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <netdb.h>
+#include <string.h>
+#include <stdio.h>
+#include <sys/select.h>
 
 #define UID_SIZE 6
 #define AID_SIZE 3
