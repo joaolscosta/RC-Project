@@ -82,7 +82,6 @@ void server()
             perror("select");
             exit(1);
         }
-
         if (FD_ISSET(udp_fd, &all_fds_read))
         {
             udp_addrlen = sizeof(udp_addr);
@@ -147,7 +146,6 @@ void server_arguments(int argc, char *argv[])
 
 int main(int argc, char const *argv[])
 {
-    printf("Hello");
     server_arguments(argc, argv);
     server();
     return 0;
