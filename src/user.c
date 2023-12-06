@@ -25,14 +25,12 @@ char tcp_input[][11] = {"open", "close", "show_asset", "bid"};
 char *ASIP = IP;
 char *ASport = DEFAULT_PORT;
 
-void message_handle(ssize_t n, char buffer[], char message_sent[])
+void message_handle(ssize_t n, char buffer[])
 {
     char message_received[30];
-    char status[30]; // Variável para armazenar o status
+    char status[30];
 
     sscanf(buffer, "%s %s", message_received, status);
-
-    printf("%s %s\n", message_received, status);
 
     if (strcmp(message_received, "RLI") == 0) // Resposta do Login
     {
@@ -187,9 +185,6 @@ void udp_message(char buffer[])
         exit(1);
     }
 
-    char message_sent[100];
-    strcpy(message_sent, buffer);
-
     addrlen = sizeof(addr);
 
     memset(buffer, 0, sizeof(buffer));
@@ -199,7 +194,7 @@ void udp_message(char buffer[])
         exit(1);
     }
 
-    message_handle(n, buffer, message_sent);
+    message_handle(n, buffer);
 
     memset(buffer, 0, sizeof(buffer));
     freeaddrinfo(res);
@@ -208,17 +203,20 @@ void udp_message(char buffer[])
 
 void udp(char buffer[])
 {
-
     char command[33];
+    char reply[33];
     sscanf(buffer, "%s", command);
 
     if (strcmp(command, "login") == 0)
     {
-        strcpy(buffer, "LIN");
-        strcat(buffer, buffer + strlen(command));
-        if (login_user(buffer))
+        char uid[7], pass[9];
+        sscanf(buffer, "%*s %s %s", uid, pass);
+        strcpy(reply, "LIN");
+        strcat(reply, uid);
+        strcat(reply, pass);
+        if (login_user(reply))
         {
-            udp_message(buffer);
+            udp_message(reply);
         }
     }
 
@@ -242,8 +240,10 @@ void udp(char buffer[])
     }
     else if ((strcmp(command, "myauctions") == 0) || (strcmp(command, "ma") == 0))
     {
+        char new_buffer[20];
         strcpy(buffer, "LMA");
         strcat(buffer, buffer + strlen(command));
+
         if (myactions_user(buffer) == 1)
         {
             udp_message(buffer);
@@ -288,57 +288,67 @@ void udp(char buffer[])
     memset(buffer, 0, sizeof(buffer));
 }
 
-// void tcp_message(char buffer[])
-// {
-//     /* Cria um socket TCP (SOCK_STREAM) para IPv4 (AF_INET).
-//     É devolvido um descritor de ficheiro (fd) para onde se deve comunicar. */
-//     fd = socket(AF_INET, SOCK_STREAM, 0);
-//     if (fd == -1)
-//     {
-//         exit(1);
-//     }
+void tcp_message(char buffer[])
+{
+    /* Cria um socket TCP (SOCK_STREAM) para IPv4 (AF_INET).
+    É devolvido um descritor de ficheiro (fd) para onde se deve comunicar. */
+    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd == -1)
+    {
+        perror("socket");
+        exit(EXIT_FAILURE);
+    }
 
-//     memset(&hints, 0, sizeof hints);
-//     hints.ai_family = AF_INET;
-//     hints.ai_socktype = SOCK_STREAM; // TCP socket
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM; // TCP socket
 
-//     errcode = getaddrinfo("localhost", PORT, &hints, &res);
-//     if (errcode != 0)
-//     {
-//         exit(1);
-//     }
+    if (getaddrinfo(ASIP, ASport, &hints, &res) != 0)
+    {
+        perror("getaddrinfo");
+        exit(EXIT_FAILURE);
+    }
 
-//     /* Em TCP é necessário estabelecer uma ligação com o servidor primeiro (Handshake).
-//        Então primeiro cria a conexão para o endereço obtido através de `getaddrinfo()`. */
-//     n = connect(fd, res->ai_addr, res->ai_addrlen);
-//     if (n == -1)
-//     {
-//         exit(1);
-//     }
+    /* Em TCP é necessário estabelecer uma ligação com o servidor primeiro (Handshake).
+       Então primeiro cria a conexão para o endereço obtido através de `getaddrinfo()`. */
+    if (connect(fd, res->ai_addr, res->ai_addrlen) == -1)
+    {
+        perror("connect");
+        exit(EXIT_FAILURE);
+    }
 
-//     /* Escreve a mensagem "Hello!\n" para o servidor, especificando o seu tamanho */
-//     n = write(fd, "Hello!\n", 7);
-//     if (n == -1)
-//     {
-//         exit(1);
-//     }
+    /* Escreve a mensagem no socket TCP para o servidor */
+    if (write(fd, buffer, strlen(buffer)) == -1)
+    {
+        perror("write");
+        exit(EXIT_FAILURE);
+    }
 
-//     /* Lê 128 Bytes do servidor e guarda-os no buffer. */
-//     n = read(fd, buffer, 128);
-//     if (n == -1)
-//     {
-//         exit(1);
-//     }
+    /* Limpa o buffer antes de ler */
+    memset(buffer, 0, sizeof(buffer));
 
-//     /* Imprime a mensagem "echo" e o conteúdo do buffer (ou seja, o que foi recebido
-//     do servidor) para o STDOUT (fd = 1) */
-//     write(1, "echo: ", 6);
-//     write(1, buffer, n);
+    /* Lê a resposta do servidor no socket TCP e guarda no buffer */
+    ssize_t bytes_received = read(fd, buffer, sizeof(buffer) - 1);
+    if (bytes_received == -1)
+    {
+        perror("read");
+        exit(EXIT_FAILURE);
+    }
+    else if (bytes_received == 0)
+    {
+        printf("Connection closed by server.\n");
+    }
+    else
+    {
+        /* Imprime a resposta do servidor */
+        buffer[bytes_received] = '\0'; // Adiciona terminador nulo para usar como string
+        printf("Received: %s\n", buffer);
+    }
 
-//     /* Desaloca a memória da estrutura `res` e fecha o socket */
-//     freeaddrinfo(res);
-//     close(fd);
-// }
+    /* Libera a memória da estrutura `res` e fecha o socket */
+    freeaddrinfo(res);
+    close(fd);
+}
 
 int check_if_tcp(char buffer[])
 {

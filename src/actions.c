@@ -36,8 +36,8 @@ int verify_user_credentials(User user)
 
 int verify_UID(char buffer[])
 {
-    char command[20], uid[8];
-    sscanf(buffer, "%s\t%s", command, uid);
+    char command[11], uid[6];
+    sscanf(buffer, "%s %s", command, uid);
     if (strlen(uid) != UID_SIZE)
     {
         printf("Invalid input: uid or password size wrong\n");
@@ -105,7 +105,7 @@ int mybids_user(char buffer[])
 
 int list_user(char buffer[])
 {
-    return verify_UID(buffer);
+    return 1;
 }
 
 int show_record_user(char buffer[])
