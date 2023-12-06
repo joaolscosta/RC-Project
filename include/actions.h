@@ -1,6 +1,17 @@
 #ifndef ACTIONS_H
 #define ACTIONS_H
 
+#include "string.h"
+#include "stdio.h"
+#include "ctype.h"
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <fcntl.h>
+#include <errno.h>
+#include <time.h>
+
 #define UID_SIZE 6
 #define AID_SIZE 3
 #define PASS_SIZE 8
@@ -13,11 +24,13 @@ typedef struct User
 
 typedef struct Auction
 {
-    char aid[AID_SIZE + 1];
-    char name[11]; // Define 11
-    // asset(image)
-    float start_value;
-    // Time duration
+    int aid;
+    char name[11];         // Define 11
+    char asset_fname[255]; // Define 255 TODO MUDAR DPS
+    int start_value;
+    time_t duration;
+    struct tm *start_datetime;
+    time_t start_fulltime;
 } Auction;
 
 // Verifications
@@ -43,21 +56,24 @@ int bid(char buffer[]);
 // int exit(char buffer[]);
 // Server
 //  Users
-void create_user_folder(User user);
-void create_pass_file(User user);
-void create_login_file(User user);
-void create_hosted_folder(User user);
-void create_bidded_folder(User user);
-void create_hosted_auction_file(User user, Auction auc);
-void create_bidded_auction_file(User user, Auction auc);
+int create_user_folder(User user);
+int create_pass_file(User user);
+int create_login_file(User user);
+int delete_login_file(User user);
+int create_hosted_folder(User user);
+int create_bidded_folder(User user);
+int create_hosted_auction_file(User user, Auction auc);
+int create_bidded_auction_file(User user, Auction auc);
 //   Auctions
-void create_auction_folder(Auction auc);
-void create_start_file(Auction auc);
-void create_asset(Auction auc);
-void create_end_file(Auction auc);
-void create_bids_folder(Auction auc);
-void create_bid_file(Auction auc);
+int create_auction_folder(int aid);
+int create_start_file(Auction auc, User user);
+int create_asset_folder(int aid);
+int create_asset(Auction auc);
+int create_end_file(Auction auc);
+int create_bids_folder(int aid);
+int create_bid_file(Auction auc, User user, int bid_value);
 // LookUps
-
+int check_asset_file(char *fname);
+// int get_bid_list(int aid, BIDLIST *list);
 /**/
 #endif
