@@ -25,32 +25,6 @@ char tcp_input[][11] = {"open", "close", "show_asset", "bid"};
 char *ASIP = IP;
 char *ASport = DEFAULT_PORT;
 
-void send_udp_message(char buffer[])
-{
-    // printf("message to send->%s", buffer);
-
-    fd = socket(AF_INET, SOCK_DGRAM, 0);
-    if (fd == -1)
-    {
-        exit(1);
-    }
-
-    memset(&hints, 0, sizeof hints);
-    hints.ai_family = AF_INET;      // IPv4
-    hints.ai_socktype = SOCK_DGRAM; // UDP socket
-
-    if (getaddrinfo(ASIP, ASport, &hints, &res) != 0)
-    {
-        printf("error in getaddrinfo\n");
-        exit(1);
-    }
-    n = sendto(fd, buffer, 20, 0, res->ai_addr, res->ai_addrlen);
-    if (n == -1)
-    {
-        exit(1);
-    }
-}
-
 void message_handle(ssize_t n, char buffer[], char message_sent[])
 {
     char message_received[30];
@@ -188,8 +162,31 @@ void message_handle(ssize_t n, char buffer[], char message_sent[])
     }
 }
 
-void received_udp_message(char buffer[])
+void udp_message(char buffer[])
 {
+    // printf("message to send->%s", buffer);
+
+    fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd == -1)
+    {
+        exit(1);
+    }
+
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_INET;      // IPv4
+    hints.ai_socktype = SOCK_DGRAM; // UDP socket
+
+    if (getaddrinfo(ASIP, ASport, &hints, &res) != 0)
+    {
+        printf("error in getaddrinfo\n");
+        exit(1);
+    }
+    n = sendto(fd, buffer, 20, 0, res->ai_addr, res->ai_addrlen);
+    if (n == -1)
+    {
+        exit(1);
+    }
+
     char message_sent[100];
     strcpy(message_sent, buffer);
 
@@ -221,8 +218,7 @@ void udp(char buffer[])
         strcat(buffer, buffer + strlen(command));
         if (login_user(buffer))
         {
-            send_udp_message(buffer);
-            received_udp_message(buffer);
+            udp_message(buffer);
         }
     }
 
@@ -232,8 +228,7 @@ void udp(char buffer[])
         strcat(buffer, buffer + strlen(command));
         if (logout_user(buffer))
         {
-            send_udp_message(buffer);
-            received_udp_message(buffer);
+            udp_message(buffer);
         }
     }
     else if (strcmp(command, "unregister") == 0)
@@ -242,8 +237,7 @@ void udp(char buffer[])
         strcat(buffer, buffer + strlen(command));
         if (unregister_user(buffer))
         {
-            send_udp_message(buffer);
-            received_udp_message(buffer);
+            udp_message(buffer);
         }
     }
     else if ((strcmp(command, "myauctions") == 0) || (strcmp(command, "ma") == 0))
@@ -252,8 +246,7 @@ void udp(char buffer[])
         strcat(buffer, buffer + strlen(command));
         if (myactions_user(buffer) == 1)
         {
-            send_udp_message(buffer);
-            received_udp_message(buffer);
+            udp_message(buffer);
         }
     }
     else if ((strcmp(command, "mybids") == 0) || (strcmp(command, "mb") == 0))
@@ -262,8 +255,7 @@ void udp(char buffer[])
         strcat(buffer, buffer + strlen(command));
         if (mybids_user(buffer) == 1)
         {
-            send_udp_message(buffer);
-            received_udp_message(buffer);
+            udp_message(buffer);
         }
     }
     else if ((strcmp(command, "list") == 0) || (strcmp(command, "l") == 0))
@@ -272,8 +264,7 @@ void udp(char buffer[])
         strcat(buffer, buffer + strlen(command));
         if (list_user(buffer) == 1)
         {
-            send_udp_message(buffer);
-            received_udp_message(buffer);
+            udp_message(buffer);
         }
     }
     else if ((strcmp(command, "show_record") == 0) || (strcmp(command, "sr") == 0))
@@ -282,8 +273,7 @@ void udp(char buffer[])
         strcat(buffer, buffer + strlen(command));
         if (show_record_user(buffer) == 1)
         {
-            send_udp_message(buffer);
-            received_udp_message(buffer);
+            udp_message(buffer);
         }
     }
     else if (strcmp(command, "exit") == 0)
@@ -297,6 +287,58 @@ void udp(char buffer[])
     }
     memset(buffer, 0, sizeof(buffer));
 }
+
+// void tcp_message(char buffer[])
+// {
+//     /* Cria um socket TCP (SOCK_STREAM) para IPv4 (AF_INET).
+//     É devolvido um descritor de ficheiro (fd) para onde se deve comunicar. */
+//     fd = socket(AF_INET, SOCK_STREAM, 0);
+//     if (fd == -1)
+//     {
+//         exit(1);
+//     }
+
+//     memset(&hints, 0, sizeof hints);
+//     hints.ai_family = AF_INET;
+//     hints.ai_socktype = SOCK_STREAM; // TCP socket
+
+//     errcode = getaddrinfo("localhost", PORT, &hints, &res);
+//     if (errcode != 0)
+//     {
+//         exit(1);
+//     }
+
+//     /* Em TCP é necessário estabelecer uma ligação com o servidor primeiro (Handshake).
+//        Então primeiro cria a conexão para o endereço obtido através de `getaddrinfo()`. */
+//     n = connect(fd, res->ai_addr, res->ai_addrlen);
+//     if (n == -1)
+//     {
+//         exit(1);
+//     }
+
+//     /* Escreve a mensagem "Hello!\n" para o servidor, especificando o seu tamanho */
+//     n = write(fd, "Hello!\n", 7);
+//     if (n == -1)
+//     {
+//         exit(1);
+//     }
+
+//     /* Lê 128 Bytes do servidor e guarda-os no buffer. */
+//     n = read(fd, buffer, 128);
+//     if (n == -1)
+//     {
+//         exit(1);
+//     }
+
+//     /* Imprime a mensagem "echo" e o conteúdo do buffer (ou seja, o que foi recebido
+//     do servidor) para o STDOUT (fd = 1) */
+//     write(1, "echo: ", 6);
+//     write(1, buffer, n);
+
+//     /* Desaloca a memória da estrutura `res` e fecha o socket */
+//     freeaddrinfo(res);
+//     close(fd);
+// }
 
 int check_if_tcp(char buffer[])
 {
