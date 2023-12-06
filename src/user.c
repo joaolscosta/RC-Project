@@ -68,10 +68,9 @@ void message_handle(ssize_t n, char buffer[], char message_sent[])
     char message_received[30];
     char status[30]; // Variável para armazenar o status
 
-    memset(message_received, 0, sizeof(message_received));
     sscanf(buffer, "%s %s", message_received, status);
 
-    // printf("%s %s\n", message_received, status);
+    printf("%s %s\n", message_received, status);
 
     if (strcmp(message_received, "RLI") == 0) // Resposta do Login
     {
@@ -136,15 +135,15 @@ void message_handle(ssize_t n, char buffer[], char message_sent[])
         else if (strcmp(status, "OK") == 0)
         {
             printf("User Actions:\n");
-            write(1, "echo: ", 6);
             write(1, buffer, n);
+            memset(buffer, 0, sizeof(buffer));
         }
         else
         {
             printf("Unknown status received: %s\n", status);
         }
     }
-    else if (strcmp(message_received, "RMB") == 0) // Resposta de MyActions
+    else if (strcmp(message_received, "RMB") == 0) // Resposta de MyBids
     {
         if (strcmp(status, "NOK") == 0)
         {
@@ -153,8 +152,42 @@ void message_handle(ssize_t n, char buffer[], char message_sent[])
         else if (strcmp(status, "OK") == 0)
         {
             printf("User Bids:\n");
-            write(1, "echo: ", 6);
             write(1, buffer, n);
+            memset(buffer, 0, sizeof(buffer));
+        }
+        else
+        {
+            printf("Unknown status received: %s\n", status);
+        }
+    }
+    else if (strcmp(message_received, "RLS") == 0) // Resposta de List
+    {
+        if (strcmp(status, "NOK") == 0)
+        {
+            printf("No action was yet started.\n");
+        }
+        else if (strcmp(status, "OK") == 0)
+        {
+            printf("All actions list:\n");
+            write(1, buffer, n);
+            memset(buffer, 0, sizeof(buffer));
+        }
+        else
+        {
+            printf("Unknown status received: %s\n", status);
+        }
+    }
+    else if (strcmp(message_received, "RRC") == 0) // Resposta de List
+    {
+        if (strcmp(status, "NOK") == 0)
+        {
+            printf("AID does not exist.\n");
+        }
+        else if (strcmp(status, "OK") == 0)
+        {
+            printf("Record:\n");
+            write(1, buffer, n);
+            memset(buffer, 0, sizeof(buffer));
         }
         else
         {
@@ -165,9 +198,6 @@ void message_handle(ssize_t n, char buffer[], char message_sent[])
     {
         printf("Invalid handle input.\n");
     }
-
-    // write(1, "echo: ", 6);
-    // write(1, buffer, n);
 }
 
 void received_udp_message(char buffer[])
@@ -228,7 +258,7 @@ void udp(char buffer[])
             received_udp_message(buffer);
         }
     }
-    else if (strcmp(command, "myauctions") == 0)
+    else if ((strcmp(command, "myauctions") == 0) || (strcmp(command, "ma") == 0))
     {
         strcpy(buffer, "LMA");
         strcat(buffer, buffer + strlen(command));
@@ -238,7 +268,7 @@ void udp(char buffer[])
             received_udp_message(buffer);
         }
     }
-    else if (strcmp(command, "mybids") == 0)
+    else if ((strcmp(command, "mybids") == 0) || (strcmp(command, "mb") == 0))
     {
         strcpy(buffer, "LMB");
         strcat(buffer, buffer + strlen(command));
@@ -248,30 +278,30 @@ void udp(char buffer[])
             received_udp_message(buffer);
         }
     }
-    /*
-    else if (strcmp(command, "list") == 0)
+    else if ((strcmp(command, "list") == 0) || (strcmp(command, "l") == 0))
     {
         strcpy(buffer, "LST");
         strcat(buffer, buffer + strlen(command));
         if (list_user(buffer) == 1)
         {
-            send_message(buffer);
+            send_udp_message(buffer);
+            received_udp_message(buffer);
         }
     }
-    else if (strcmp(command, "show_record") == 0)
+    else if ((strcmp(command, "show_record") == 0) || (strcmp(command, "sr") == 0))
     {
-        strcpy(buffer, "LST");
+        strcpy(buffer, "SRC");
         strcat(buffer, buffer + strlen(command));
         if (show_record_user(buffer) == 1)
         {
-            send_message(buffer);
+            send_udp_message(buffer);
+            received_udp_message(buffer);
         }
     }
     else if (strcmp(command, "exit") == 0)
     {
-        // first do logout if there is any logged in then exit
+        exit(1);
     }
-    */
     else
     {
         perror("invalid input");

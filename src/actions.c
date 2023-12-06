@@ -58,9 +58,11 @@ int verify_AID(char buffer[])
 {
     char command[20], aid[8];
     sscanf(buffer, "%s\t%s", command, aid);
+    int i = 0, tamanho = 0;
+
     if (strlen(aid) != 3)
     {
-        printf("Invalid input: uid or password size wrong\n");
+        printf("Invalid input: AID size wrong\n");
         return 0;
     }
     for (int i = 0; i < strlen(aid); i++)
@@ -105,7 +107,7 @@ int mybids_user(char buffer[])
 
 int list_user(char buffer[])
 {
-    return verify_UID(buffer);
+    return 1;
 }
 
 int show_record_user(char buffer[])
@@ -236,14 +238,15 @@ int create_hosted_auction_file(User user, Auction auc)
 
 int create_bidded_auction_file(User user, Auction auc)
 {
-    char bidded_file_path[28];
-    FILE *bidded_file;
-    sprintf(bidded_file_path, "USERS/%s/BIDDED/%03d.txt", user.uid, auc.aid);
-    bidded_file = fopen(bidded_file_path, "w");
-    if (bidded_file != NULL)
+    // create the User folder
+    char folder_Path[22];
+    sprintf(folder_Path, "ASDIR/AUCTIONS/%s", auc.aid);
+    if (mkdir(folder_Path, 0777) == 0)
     {
-        fclose(bidded_file);
-        return 1;
+        create_start_file(auc, );
+        create_asset_file(auc.aid);
+        create_end_file(auc);
+        create_bids_folder(auc.aid);
     }
     else
     {
