@@ -236,15 +236,14 @@ int create_hosted_auction_file(User user, Auction auc)
 
 int create_bidded_auction_file(User user, Auction auc)
 {
-    // create the User folder
-    char folder_Path[22];
-    sprintf(folder_Path, "ASDIR/AUCTIONS/%s", auc.aid);
-    if (mkdir(folder_Path, 0777) == 0)
+    char bidded_file_path[28];
+    FILE *bidded_file;
+    sprintf(bidded_file_path, "USERS/%s/BIDDED/%03d.txt", user.uid, auc.aid);
+    bidded_file = fopen(bidded_file_path, "w");
+    if (bidded_file != NULL)
     {
-        create_start_file(auc);
-        create_asset_file(auc);
-        create_end_file(auc);
-        create_bids_folder(auc.aid);
+        fclose(bidded_file);
+        return 1;
     }
     else
     {
@@ -312,7 +311,7 @@ int create_asset_folder(int aid)
     }
 }
 
-int create_asset(Auction auc)
+int create_asset_file(Auction auc)
 {
     printf("...");
     return 0;
