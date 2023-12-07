@@ -16,6 +16,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <sys/select.h>
+#include <dirent.h>
 
 #define UID_SIZE 7
 #define AID_SIZE 4
@@ -23,8 +24,8 @@
 
 typedef struct User
 {
-    char uid[UID_SIZE + 1];
-    char password[PASS_SIZE + 1];
+    char uid[UID_SIZE];
+    char password[PASS_SIZE];
 } User;
 
 typedef struct Auction
@@ -44,8 +45,8 @@ int verify_UID(char uid[]);
 int verify_AID(char aid[]);
 int calculate_str_length(char buffer[]);
 // UDP
-int login_user(char buffer[]);
-int logout_user(char buffer[]);
+int login_user(char uid[], char pass[]);
+int logout_user(char uid[], char pass[]);
 int unregister_user(char buffer[]);
 int myactions_user(char buffer[]);
 int mybids_user(char buffer[]);
@@ -62,12 +63,12 @@ int bid(char buffer[]);
 // int exit(char buffer[]);
 // Server
 //  Users
-int create_user_folder(User user);
-int create_pass_file(User user);
-int create_login_file(User user);
-int delete_login_file(User user);
-int create_hosted_folder(User user);
-int create_bidded_folder(User user);
+int create_user_folder(char uid[], char pass[]);
+int create_pass_file(char uid[], char pass[]);
+int create_login_file(char uid[]);
+int delete_login_file(char uid[]);
+int create_hosted_folder(char uid[]);
+int create_bidded_folder(char uid[]);
 int create_hosted_auction_file(User user, Auction auc);
 int create_bidded_auction_file(User user, Auction auc);
 //   Auctions
@@ -79,6 +80,7 @@ int create_end_file(Auction auc);
 int create_bids_folder(int aid);
 int create_bid_file(Auction auc, User user, int bid_value);
 // LookUps
+int check_user(char uid[]);
 int check_asset_file(char *fname);
 // int get_bid_list(int aid, BIDLIST *list);
 /**/

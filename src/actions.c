@@ -1,12 +1,5 @@
 #include "actions.h"
 
-User parse_user_credentials(char buffer[])
-{
-    User user;
-    sscanf(buffer, "%*s\t%s\t%s", user.uid, user.password);
-    return user;
-}
-
 int verify_UID(char uid[])
 {
 
@@ -79,24 +72,45 @@ int calculate_str_length(char buffer[])
     }
     return length;
 }
-/*
-int login_user(char buffer[])
-{
-    create_user_folder(user);
-    return verify_user_credentials(uid, pass);
-}
 
+// Returns Status
+int login_user(char uid[], char pass[])
+{
+    // Check if is already registered
+    if (check_user(uid))
+    {
+        // User already Registered
+        // Check password file
+        if (check_user_password(uid, pass))
+        {
+            // Status OK
+            return 1;
+        }
+        // STATUS NOK
+        return 0;
+    }
+    else
+    {
+        // Register User
+        create_user_folder(uid, pass);
+        return 2;
+    }
+}
+/*
 int logout_user(char buffer[])
 {
     User user = parse_user_credentials(buffer);
     return verify_user_credentials(user);
 }
+*/
 
+/*
 int unregister_user(char buffer[])
 {
     User user = parse_user_credentials(buffer);
     return verify_user_credentials(user);
 }
+*/
 
 int myactions_user(char buffer[])
 {
@@ -117,20 +131,30 @@ int show_record_user(char buffer[])
 {
     return verify_AID(buffer);
 }
-*/
-int create_user_folder(User user)
+
+int create_user_folder(char uid[], char pass[])
 {
     // create the User folder
     char folder_Path[13];
-    sprintf(folder_Path, "USERS/%s", user.uid);
+    sprintf(folder_Path, "USERS/%s", uid);
     if (mkdir(folder_Path, 0700) == 0)
     {
-        if (!create_hosted_folder(user))
+        if (!create_hosted_folder(uid))
         {
             rmdir(folder_Path);
             return 0;
         }
-        if (!create_bidded_folder(user))
+        if (!create_bidded_folder(uid))
+        {
+            rmdir(folder_Path);
+            return 0;
+        }
+        if (!create_pass_file(uid, pass))
+        {
+            rmdir(folder_Path);
+            return 0;
+        }
+        if (!create_login_file(uid))
         {
             rmdir(folder_Path);
             return 0;
@@ -143,15 +167,15 @@ int create_user_folder(User user)
     }
 }
 
-int create_pass_file(User user)
+int create_pass_file(char uid[], char pass[])
 {
     char pass_file_path[34];
     FILE *pass_file;
-    sprintf(pass_file_path, "USERS/%s/%s_pass.txt", user.uid, user.uid);
+    sprintf(pass_file_path, "USERS/%s/%s_pass.txt", uid, uid);
     pass_file = fopen(pass_file_path, "w");
     if (pass_file != NULL)
     {
-        fprintf(pass_file, "%s", user.password);
+        fprintf(pass_file, "%s", pass);
         fclose(pass_file);
         return 1;
     }
@@ -161,16 +185,15 @@ int create_pass_file(User user)
     }
 }
 
-int create_login_file(User user)
+int create_login_file(char uid[])
 {
     char login_file_path[35];
     FILE *login_file;
     // checkam o comprimento de uid no Guia acho q n é preciso once again se fizermos num parse ou num verify
-    sprintf(login_file_path, "USERS/%s/%s_login.txt", user.uid, user.uid);
+    sprintf(login_file_path, "USERS/%s/%s_login.txt", uid, uid);
     login_file = fopen(login_file_path, "w");
     if (login_file != NULL)
     {
-        fprintf(login_file, "Logged in\n");
         fclose(login_file);
         return 1;
     }
@@ -180,10 +203,10 @@ int create_login_file(User user)
     }
 }
 
-int delete_login_file(User user)
+int delete_login_file(char uid[])
 {
     char login_file_path[35];
-    sprintf(login_file_path, "USERS/%s/%s_login.txt", user.uid, user.uid);
+    sprintf(login_file_path, "USERS/%s/%s_login.txt", uid, uid);
     if (unlink(login_file_path) == 0)
     {
         return 1;
@@ -194,10 +217,10 @@ int delete_login_file(User user)
     }
 }
 
-int create_hosted_folder(User user)
+int create_hosted_folder(char uid[])
 {
     char hosted_folder_path[20];
-    sprintf(hosted_folder_path, "USERS/%s/HOSTED", user.uid);
+    sprintf(hosted_folder_path, "USERS/%s/HOSTED", uid);
     if (mkdir(hosted_folder_path, 0700) == 0)
     {
         return 1;
@@ -208,10 +231,10 @@ int create_hosted_folder(User user)
     }
 }
 
-int create_bidded_folder(User user)
+int create_bidded_folder(char uid[])
 {
     char bidded_folder_Path[20];
-    sprintf(bidded_folder_Path, "USERS/%s/BIDDED", user.uid);
+    sprintf(bidded_folder_Path, "USERS/%s/BIDDED", uid);
     if (mkdir(bidded_folder_Path, 0700) == 0)
     {
         return 1;
@@ -379,6 +402,55 @@ int create_bid_file(Auction auc, User user, int bid_value)
     {
         return 0;
     }
+}
+
+// Check if user exists
+int check_user(char uid[])
+{
+    struct dirent **entrylist;
+    char dirname[7] = "USERS/";
+    int n_entries = scandir(dirname, &entrylist, NULL, alphasort);
+    if (n_entries < 0)
+    {
+        perror("scandir");
+        return 0;
+    }
+    // Care here on the loop for later should work for now
+    int folderFound = 0;
+    for (int i = 0; i < n_entries; ++i)
+    {
+        if (entrylist[i]->d_type == DT_DIR && strcmp(entrylist[i]->d_name, uid) == 0)
+        {
+            folderFound = 1;
+            break;
+        }
+        free(entrylist[i]); // Free memory for each entry
+    }
+    free(entrylist); // Free the entryList array
+    return folderFound;
+}
+
+// Check password
+int check_user_password(char uid[], char pass[])
+{
+    char pass_file_path[34];
+    FILE *pass_file;
+    sprintf(pass_file_path, "USERS/%s/%s_pass.txt", uid, uid);
+    pass_file = fopen(pass_file_path, "r");
+    if (pass_file != NULL)
+    {
+        char stored_password[PASS_SIZE];
+        if (fscanf(pass_file, "%s", stored_password) == 1)
+        {
+            if (strcmp(pass, stored_password) == 0)
+            {
+                fclose(pass_file);
+                return 1;
+            }
+        }
+        fclose(pass_file);
+    }
+    return 0;
 }
 
 // Checks if asset_file exists, if so returns the files size

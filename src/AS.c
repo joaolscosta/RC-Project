@@ -14,6 +14,70 @@ char buffer[128];
 char *ASport = DEFAULT_PORT; // Chanhge to GROUO PORT
 int verbose = 0;
 
+void udp_message_handle(ssize_t n, char buffer[])
+{
+    char reply[128];
+    char code[4];
+    char reply_code[4];
+    sscanf(buffer, "%s ", code);
+    if (strcmp(code, "LIN") == 0) // Login
+    {
+        char uid[UID_SIZE], pass[PASS_SIZE];
+        sscanf(buffer, "%*s %s %s", uid, pass);
+        strcpy(reply_code, "RLI");
+        if (verify_user_credentials(uid, pass))
+        {
+            char status[4];
+            int result = login_user(uid, pass);
+            switch (result)
+            {
+            case 0:
+                strcpy(status, "NOK");
+                sprintf(reply, "%s %s", reply_code, status);
+                break;
+            case 1:
+                strcpy(status, "OK");
+                sprintf(reply, "%s %s", reply_code, status);
+                break;
+            case 2:
+                strcpy(status, "REG");
+                sprintf(reply, "%s %s", reply_code, status);
+                break;
+            }
+        }
+        // Credentials Wrong
+    }
+    else if (strcmp(code, "LOU") == 0) // Logout
+    {
+    }
+    else if (strcmp(code, "UNR") == 0) // Unregister
+    {
+    }
+    else if (strcmp(code, "LMA") == 0) // MyActions
+    {
+    }
+    else if (strcmp(code, "LMB") == 0) // MyBids
+    {
+    }
+    else if (strcmp(code, "LST") == 0) // List
+    {
+    }
+    else if (strcmp(code, "SRC") == 0) // Show_record
+    {
+    }
+    else
+    {
+        printf("Invalid handle input.\n");
+    }
+
+    // Send the Code Reply
+    if (sendto(udp_fd, reply, strlen(reply), 0, (struct sockaddr *)&udp_addr, udp_addrlen) == -1)
+    {
+        perror("sendto");
+        exit(1);
+    }
+}
+
 void server()
 {
     // UDP setup
@@ -93,11 +157,7 @@ void server()
 
             printf("[UDP] Received: %.*s\n", (int)n, buffer);
 
-            if (sendto(udp_fd, buffer, n, 0, (struct sockaddr *)&udp_addr, udp_addrlen) == -1)
-            {
-                perror("sendto");
-                exit(1);
-            }
+            udp_message_handle(n, buffer);
         }
 
         if (FD_ISSET(tcp_fd, &all_fds_read))

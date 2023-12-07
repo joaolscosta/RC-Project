@@ -27,12 +27,10 @@ char *ASport = DEFAULT_PORT;
 
 void message_handle(ssize_t n, char buffer[])
 {
-    char message_received[30];
-    char status[30];
-
-    sscanf(buffer, "%s %*s", message_received);
-
-    if (strcmp(message_received, "RLI") == 0) // Resposta do Login
+    char code[4];
+    char status[4];
+    sscanf(buffer, "%s %s", code, status);
+    if (strcmp(code, "RLI") == 0) // Resposta do Login
     {
         if (strcmp(status, "OK") == 0)
         {
@@ -52,7 +50,7 @@ void message_handle(ssize_t n, char buffer[])
             printf("Unknown status received: %s\n", status);
         }
     }
-    else if (strcmp(message_received, "RLO") == 0) // Reposta de Logout
+    else if (strcmp(code, "RLO") == 0) // Reposta de Logout
     {
         if (strcmp(status, "OK") == 0)
         {
@@ -67,7 +65,7 @@ void message_handle(ssize_t n, char buffer[])
             printf("Unknown status received: %s\n", status);
         }
     }
-    else if (strcmp(message_received, "RUR") == 0) // Resposta de Unregister
+    else if (strcmp(code, "RUR") == 0) // Resposta de Unregister
     {
         if (strcmp(status, "OK") == 0)
         {
@@ -86,7 +84,7 @@ void message_handle(ssize_t n, char buffer[])
             printf("Unknown status received: %s\n", status);
         }
     }
-    else if (strcmp(message_received, "RMA") == 0) // Resposta de MyActions
+    else if (strcmp(code, "RMA") == 0) // Resposta de MyActions
     {
         if (strcmp(status, "NOK") == 0)
         {
@@ -103,7 +101,7 @@ void message_handle(ssize_t n, char buffer[])
             printf("Unknown status received: %s\n", status);
         }
     }
-    else if (strcmp(message_received, "RMB") == 0) // Resposta de MyBids
+    else if (strcmp(code, "RMB") == 0) // Resposta de MyBids
     {
         if (strcmp(status, "NOK") == 0)
         {
@@ -120,7 +118,7 @@ void message_handle(ssize_t n, char buffer[])
             printf("Unknown status received: %s\n", status);
         }
     }
-    else if (strcmp(message_received, "RLS") == 0) // Resposta de List
+    else if (strcmp(code, "RLS") == 0) // Resposta de List
     {
         if (strcmp(status, "NOK") == 0)
         {
@@ -137,7 +135,7 @@ void message_handle(ssize_t n, char buffer[])
             printf("Unknown status received: %s\n", status);
         }
     }
-    else if (strcmp(message_received, "RRC") == 0) // Resposta de List
+    else if (strcmp(code, "RRC") == 0) // Resposta de List
     {
         if (strcmp(status, "NOK") == 0)
         {
@@ -186,7 +184,8 @@ void udp_message(char buffer[])
         perror("sendto");
         exit(EXIT_FAILURE);
     }
-
+    // Clean buffer pq é reutilizado para receber e enviar o msm buffer
+    memset(buffer, 0, sizeof(buffer));
     // Recebimento da resposta do servidor
     addrlen = sizeof(addr);
     n = recvfrom(fd, buffer, 8192, 0, (struct sockaddr *)&addr, &addrlen);
@@ -196,7 +195,6 @@ void udp_message(char buffer[])
         exit(EXIT_FAILURE);
     }
 
-    printf("-> %s\n", buffer);
     message_handle(n, buffer);
 
     memset(buffer, 0, sizeof(buffer));
@@ -440,16 +438,13 @@ int main(int argc, char const *argv[])
 
         if (select(max_fd + 1, &newfds, NULL, NULL, NULL) == -1)
         {
-
             perror("select");
             exit(EXIT_FAILURE);
         }
 
         if (FD_ISSET(STDIN_FILENO, &newfds))
         {
-
             char buffer[8192];
-
             if (fgets(buffer, sizeof(buffer), stdin) == NULL)
             {
                 perror("fgets");
