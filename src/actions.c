@@ -73,7 +73,38 @@ int calculate_str_length(char buffer[])
     return length;
 }
 
-// Returns Status
+int check_if_single_word(char buffer[])
+{
+    int length = 0;
+    while (buffer[length] != '\0')
+    {
+        if (isspace(buffer[length]))
+        {
+            return 0;
+        }
+        length++;
+    }
+    return 1;
+}
+
+int check_minimum_selling_value(int bid_valuem, int start_value)
+{
+    if (bid_valuem < start_value)
+    {
+        return 0;
+    }
+    return 1;
+}
+
+int check_time_active(int current_time, int max_time_active)
+{
+    if (current_time > max_time_active)
+    {
+        return 0;
+    }
+    return 1;
+}
+
 int login_user(char uid[], char pass[])
 {
     // Check if is already registered

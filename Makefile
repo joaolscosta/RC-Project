@@ -2,7 +2,7 @@
 
 # Compiler and flags
 CC = gcc
-CFLAGS = -Wall -Iinclude -pedantic -Wno-sizeof-pointer-memaccess -Wno-sizeof-array-argument -Wno-int-conversion
+CFLAGS = -Wall -Iinclude -pedantic -Wno-sizeof-pointer-memaccess -Wno-sizeof-array-argument -Wno-int-conversion -Wno-format-overflow -Wno-incompatible-pointer-types
 
 # Source files
 SRC_DIR = src

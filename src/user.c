@@ -25,7 +25,7 @@ char tcp_input[][11] = {"open", "close", "show_asset", "bid"};
 char *ASIP = IP;
 char *ASport = DEFAULT_PORT;
 
-void message_handle(ssize_t n, char buffer[])
+void udp_message_handle(ssize_t n, char buffer[])
 {
     char code[4];
     char status[4];
@@ -160,7 +160,7 @@ void message_handle(ssize_t n, char buffer[])
 
 void udp_message(char buffer[])
 {
-    printf("message to send->%s\n", buffer);
+    // printf("message to send->%s\n", buffer);
 
     fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd == -1)
@@ -195,7 +195,7 @@ void udp_message(char buffer[])
         exit(EXIT_FAILURE);
     }
 
-    message_handle(n, buffer);
+    udp_message_handle(n, buffer);
 
     memset(buffer, 0, sizeof(buffer));
     freeaddrinfo(res);
@@ -286,10 +286,105 @@ void udp(char buffer[])
     memset(buffer, 0, sizeof(buffer));
 }
 
+void tcp_message_handle(ssize_t n, char buffer[])
+{
+    char message_received[30];
+    char status[30];
+
+    sscanf(buffer, "%s %s", message_received, status);
+
+    if (strcmp(message_received, "ROA") == 0) // Resposta do open
+    {
+        if (strcmp(status, "OK") == 0)
+        {
+            printf("AID: A_FAZER\n");
+        }
+        else if (strcmp(status, "NOK") == 0)
+        {
+            printf("Action could not be started.\n");
+        }
+        else if (strcmp(status, "NLG") == 0)
+        {
+            printf("User not logged in.\n");
+        }
+        else
+        {
+            printf("Unknown status received: %s\n", status);
+        }
+    }
+    else if (strcmp(message_received, "RCL") == 0) // Resposta do Close
+    {
+        if (strcmp(status, "OK") == 0)
+        {
+            printf("Auction sucessfully closed.\n");
+        }
+        else if (strcmp(status, "EAU") == 0)
+        {
+            printf("Auctions does not exist.\n");
+        }
+        else if (strcmp(status, "EOW") == 0)
+        {
+            printf("Auctions not owned by this user.\n");
+        }
+        else if (strcmp(status, "END") == 0)
+        {
+            printf("Auctions already finished.\n");
+        }
+        else if (strcmp(status, "NLG") == 0)
+        {
+            printf("User not logged in.\n");
+        }
+        else
+        {
+            printf("Unknown status received: %s\n", status);
+        }
+    }
+    else if (strcmp(message_received, "RSA") == 0) // Resposta do Show_Asset
+    {
+        if (strcmp(status, "OK") == 0)
+        {
+            printf("ENVIAR FILE.\n");
+        }
+        else if (strcmp(status, "NOK") == 0)
+        {
+            printf("No file to be sent or other problem.\n");
+        }
+        else
+        {
+            printf("Unknown status received: %s\n", status);
+        }
+    }
+    else if (strcmp(message_received, "RBD") == 0) // Resposta do Show_Asset
+    {
+        if (strcmp(status, "NLG") == 0)
+        {
+            printf("User not logged in.\n");
+        }
+        else if (strcmp(status, "NOK") == 0)
+        {
+            printf("Auction is not active.\n");
+        }
+        else if (strcmp(status, "ACC") == 0)
+        {
+            printf("Auction ongoing was accepeted.\n");
+        }
+        else if (strcmp(status, "REF") == 0)
+        {
+            printf("Recused because there is already a bigger bid placed.\n");
+        }
+        else if (strcmp(status, "ILG") == 0)
+        {
+            printf("Recused for trying to bid in a auctions hosted by yourself.\n");
+        }
+        else
+        {
+            printf("Unknown status received: %s\n", status);
+        }
+    }
+}
+
 void tcp_message(char buffer[])
 {
-    /* Cria um socket TCP (SOCK_STREAM) para IPv4 (AF_INET).
-    É devolvido um descritor de ficheiro (fd) para onde se deve comunicar. */
     int fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1)
     {
@@ -299,7 +394,7 @@ void tcp_message(char buffer[])
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM; // TCP socket
+    hints.ai_socktype = SOCK_STREAM;
 
     if (getaddrinfo(ASIP, ASport, &hints, &res) != 0)
     {
@@ -307,25 +402,20 @@ void tcp_message(char buffer[])
         exit(EXIT_FAILURE);
     }
 
-    /* Em TCP é necessário estabelecer uma ligação com o servidor primeiro (Handshake).
-       Então primeiro cria a conexão para o endereço obtido através de `getaddrinfo()`. */
     if (connect(fd, res->ai_addr, res->ai_addrlen) == -1)
     {
         perror("connect");
         exit(EXIT_FAILURE);
     }
 
-    /* Escreve a mensagem no socket TCP para o servidor */
     if (write(fd, buffer, strlen(buffer)) == -1)
     {
         perror("write");
         exit(EXIT_FAILURE);
     }
 
-    /* Limpa o buffer antes de ler */
     memset(buffer, 0, sizeof(buffer));
 
-    /* Lê a resposta do servidor no socket TCP e guarda no buffer */
     ssize_t bytes_received = read(fd, buffer, sizeof(buffer) - 1);
     if (bytes_received == -1)
     {
@@ -338,14 +428,61 @@ void tcp_message(char buffer[])
     }
     else
     {
-        /* Imprime a resposta do servidor */
-        buffer[bytes_received] = '\0'; // Adiciona terminador nulo para usar como string
-        printf("Received: %s\n", buffer);
+        buffer[bytes_received] = '\0';
+        tcp_message_handle(bytes_received, buffer);
     }
 
-    /* Libera a memória da estrutura `res` e fecha o socket */
     freeaddrinfo(res);
     close(fd);
+}
+
+void tcp(char buffer[])
+{
+
+    char command[33];
+    char reply[33];
+    sscanf(buffer, "%s", command);
+
+    if (strcmp(command, "open") == 0) // Open auction
+    {
+        char uid[7], pass[9], auction_name[33], file_name[33], file_data[8192]; //! cuidado com os tamanhos dos chars
+        int start_value, time_active;
+        ssize_t file_size;
+        sscanf(buffer, "open %s %s %d %d", auction_name, file_name, start_value, time_active);
+        sprintf(reply, "LIN %s %s %s %d %d %s %d %s", uid, pass, auction_name, start_value, time_active, file_name, file_size, file_data);
+
+        tcp_message(buffer);
+    }
+    else if (strcmp(command, "close") == 0)
+    {
+        char uid[7], pass[9], aid[4];
+        sscanf(buffer, "close %s", aid);
+        sprintf(reply, "CLS %s %s %s", uid, pass, aid);
+
+        tcp_message(buffer);
+    }
+    else if ((strcmp(command, "show_asset") == 0) || (strcmp(command, "sa") == 0))
+    {
+        char aid[4];
+        sscanf(buffer, "show_asset %s", aid);
+        sprintf(reply, "SAS %s", aid);
+
+        tcp_message(buffer);
+    }
+    else if (strcmp(command, "bid") == 0)
+    {
+        char uid[7], pass[9], aid[4];
+        int bid_value;
+        sscanf(buffer, "bid %s %d", aid, bid_value);
+        sprintf(reply, "BID %s %s %s", uid, pass, aid, bid_value);
+
+        tcp_message(buffer);
+    }
+    else
+    {
+        perror("invalid input");
+        exit(EXIT_FAILURE);
+    }
 }
 
 int check_if_tcp(char buffer[])
@@ -364,39 +501,6 @@ int check_if_tcp(char buffer[])
     }
 
     return 0;
-}
-
-void tcp(char buffer[])
-{
-
-    char command[33];
-    sscanf(buffer, "%s", command);
-
-    if (strcmp(command, "open") == 0)
-    {
-        strcpy(buffer, "OPA");
-        strcat(buffer, buffer + strlen(command));
-    }
-    else if (strcmp(command, "close") == 0)
-    {
-        strcpy(buffer, "CLS");
-        strcat(buffer, buffer + strlen(command));
-    }
-    else if (strcmp(command, "show_asset") == 0)
-    {
-        strcpy(buffer, "SAS");
-        strcat(buffer, buffer + strlen(command));
-    }
-    else if (strcmp(command, "bid") == 0)
-    {
-        strcpy(buffer, "BID");
-        strcat(buffer, buffer + strlen(command));
-    }
-    else
-    {
-        perror("invalid input");
-        exit(EXIT_FAILURE);
-    }
 }
 
 void user_arguments(int argc, char *argv[])
