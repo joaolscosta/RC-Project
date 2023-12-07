@@ -7,24 +7,41 @@ User parse_user_credentials(char buffer[])
     return user;
 }
 
-int verify_user_credentials(User user)
+int verify_UID(char uid[])
 {
-    if (strlen(user.uid) != UID_SIZE || strlen(user.password) != PASS_SIZE)
+
+    int uid_length = calculate_str_length(uid);
+    if ((uid_length - 6) != 0)
     {
-        printf("Invalid input: uid or password size wrong\n");
+        printf("Invalid input: uid size wrong.\n");
         return 0;
     }
-    for (int i = 0; i < strlen(user.uid); i++)
+    for (int i = 0; i < strlen(uid); i++)
     {
-        if (!isdigit(user.uid[i]))
+        if (!isdigit(uid[i]))
         {
-            printf("Invalid input: uid\n");
+            printf("Invalid input: uid not a number\n");
             return 0;
         }
     }
-    for (int i = 0; i < strlen(user.password); i++)
+    return 1;
+}
+
+int verify_user_credentials(char uid[], char pass[])
+{
+    if (verify_UID(uid) != 1)
     {
-        if (!isdigit(user.password[i]) && !isalpha(user.password[i]))
+        return 0;
+    }
+    int pass_length = calculate_str_length(pass);
+    if ((pass_length - 8) != 0)
+    {
+        printf("Invalid input: password size wrong\n");
+        return 0;
+    }
+    for (int i = 0; i < strlen(pass); i++)
+    {
+        if (!isdigit(pass[i]) && !isalpha(pass[i]))
         {
             printf("Invalid input: password\n");
             return 0;
@@ -34,51 +51,39 @@ int verify_user_credentials(User user)
     return 1;
 }
 
-int verify_UID(char buffer[])
+int verify_AID(char aid[])
 {
-    char command[11], uid[6];
-    sscanf(buffer, "%s %s", command, uid);
-    if (strlen(uid) != UID_SIZE)
+    int aid_length = calculate_str_length(aid);
+    if ((aid_length - AID_SIZE) != 0)
     {
-        printf("Invalid input: uid or password size wrong\n");
-        return 0;
-    }
-    for (int i = 0; i < strlen(uid); i++)
-    {
-        if (!isdigit(uid[i]))
-        {
-            printf("Invalid input: uid\n");
-            return 0;
-        }
-    }
-    return 1;
-}
-
-int verify_AID(char buffer[])
-{
-    char command[20], aid[8];
-    sscanf(buffer, "%s\t%s", command, aid);
-    if (strlen(aid) != 3)
-    {
-        printf("Invalid input: uid or password size wrong\n");
+        printf("Invalid input: aid size wrong.\n");
         return 0;
     }
     for (int i = 0; i < strlen(aid); i++)
     {
         if (!isdigit(aid[i]))
         {
-            printf("Invalid input: uid\n");
+            printf("Invalid input: aid not a number\n");
             return 0;
         }
     }
     return 1;
 }
 
+int calculate_str_length(char buffer[])
+{
+    int length = 0;
+    while (buffer[length] != '\0')
+    {
+        length++;
+    }
+    return length;
+}
+/*
 int login_user(char buffer[])
 {
-    User user = parse_user_credentials(buffer);
     create_user_folder(user);
-    return verify_user_credentials(user);
+    return verify_user_credentials(uid, pass);
 }
 
 int logout_user(char buffer[])
@@ -112,7 +117,7 @@ int show_record_user(char buffer[])
 {
     return verify_AID(buffer);
 }
-
+*/
 int create_user_folder(User user)
 {
     // create the User folder

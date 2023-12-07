@@ -30,7 +30,7 @@ void message_handle(ssize_t n, char buffer[])
     char message_received[30];
     char status[30];
 
-    sscanf(buffer, "%s %s", message_received, status);
+    sscanf(buffer, "%s %*s", message_received);
 
     if (strcmp(message_received, "RLI") == 0) // Resposta do Login
     {
@@ -162,7 +162,7 @@ void message_handle(ssize_t n, char buffer[])
 
 void udp_message(char buffer[])
 {
-    // printf("message to send->%s", buffer);
+    printf("message to send->%s\n", buffer);
 
     fd = socket(AF_INET, SOCK_DGRAM, 0);
     if (fd == -1)
@@ -179,21 +179,24 @@ void udp_message(char buffer[])
         printf("error in getaddrinfo\n");
         exit(1);
     }
-    n = sendto(fd, buffer, 20, 0, res->ai_addr, res->ai_addrlen);
+
+    n = sendto(fd, buffer, strlen(buffer), 0, res->ai_addr, res->ai_addrlen);
     if (n == -1)
     {
-        exit(1);
+        perror("sendto");
+        exit(EXIT_FAILURE);
     }
 
+    // Recebimento da resposta do servidor
     addrlen = sizeof(addr);
-
-    memset(buffer, 0, sizeof(buffer));
     n = recvfrom(fd, buffer, 8192, 0, (struct sockaddr *)&addr, &addrlen);
     if (n == -1)
     {
-        exit(1);
+        perror("recvfrom");
+        exit(EXIT_FAILURE);
     }
 
+    printf("-> %s\n", buffer);
     message_handle(n, buffer);
 
     memset(buffer, 0, sizeof(buffer));
@@ -210,11 +213,9 @@ void udp(char buffer[])
     if (strcmp(command, "login") == 0)
     {
         char uid[7], pass[9];
-        sscanf(buffer, "%*s %s %s", uid, pass);
-        strcpy(reply, "LIN");
-        strcat(reply, uid);
-        strcat(reply, pass);
-        if (login_user(reply))
+        sscanf(buffer, "login %s %s", uid, pass);
+        sprintf(reply, "LIN %s %s", uid, pass);
+        if (verify_user_credentials(uid, pass) == 1)
         {
             udp_message(reply);
         }
@@ -222,58 +223,57 @@ void udp(char buffer[])
 
     else if (strcmp(command, "logout") == 0)
     {
-        strcpy(buffer, "LOU");
-        strcat(buffer, buffer + strlen(command));
-        if (logout_user(buffer))
+        char uid[7], pass[9];
+        sscanf(buffer, "%*s %s %s", uid, pass);
+        sprintf(reply, "LOU %s %s", uid, pass);
+        if (verify_user_credentials(uid, pass))
         {
-            udp_message(buffer);
+            udp_message(reply);
         }
     }
     else if (strcmp(command, "unregister") == 0)
     {
-        strcpy(buffer, "UNR");
-        strcat(buffer, buffer + strlen(command));
-        if (unregister_user(buffer))
+        char uid[7], pass[9];
+        sscanf(buffer, "%*s %s %s", uid, pass);
+        sprintf(reply, "UNR %s %s", uid, pass);
+        if (verify_user_credentials(uid, pass))
         {
-            udp_message(buffer);
+            udp_message(reply);
         }
     }
     else if ((strcmp(command, "myauctions") == 0) || (strcmp(command, "ma") == 0))
     {
-        char new_buffer[20];
-        strcpy(buffer, "LMA");
-        strcat(buffer, buffer + strlen(command));
-
-        if (myactions_user(buffer) == 1)
+        char uid[7];
+        sscanf(buffer, "%*s %s", uid);
+        sprintf(reply, "LMA %s", uid);
+        if (verify_UID(uid))
         {
-            udp_message(buffer);
+            udp_message(reply);
         }
     }
     else if ((strcmp(command, "mybids") == 0) || (strcmp(command, "mb") == 0))
     {
-        strcpy(buffer, "LMB");
-        strcat(buffer, buffer + strlen(command));
-        if (mybids_user(buffer) == 1)
+        char uid[7];
+        sscanf(buffer, "%*s %s", uid);
+        sprintf(reply, "LMB %s", uid);
+        if (verify_UID(uid))
         {
-            udp_message(buffer);
+            udp_message(reply);
         }
     }
     else if ((strcmp(command, "list") == 0) || (strcmp(command, "l") == 0))
     {
-        strcpy(buffer, "LST");
-        strcat(buffer, buffer + strlen(command));
-        if (list_user(buffer) == 1)
-        {
-            udp_message(buffer);
-        }
+        strcpy(reply, "LST");
+        udp_message(reply);
     }
     else if ((strcmp(command, "show_record") == 0) || (strcmp(command, "sr") == 0))
     {
-        strcpy(buffer, "SRC");
-        strcat(buffer, buffer + strlen(command));
-        if (show_record_user(buffer) == 1)
+        char aid[7];
+        sscanf(buffer, "%*s %s", aid);
+        sprintf(reply, "SRC %s", aid);
+        if (verify_AID(aid))
         {
-            udp_message(buffer);
+            udp_message(reply);
         }
     }
     else if (strcmp(command, "exit") == 0)

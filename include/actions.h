@@ -17,9 +17,9 @@
 #include <stdio.h>
 #include <sys/select.h>
 
-#define UID_SIZE 6
-#define AID_SIZE 3
-#define PASS_SIZE 8
+#define UID_SIZE 7
+#define AID_SIZE 4
+#define PASS_SIZE 9
 
 typedef struct User
 {
@@ -39,9 +39,10 @@ typedef struct Auction
 } Auction;
 
 // Verifications
-int verify_user_credentials(User user);
-int verify_UID(char buffer[]);
-int verify_AID(char buffer[]);
+int verify_user_credentials(char uid[], char pass[]);
+int verify_UID(char uid[]);
+int verify_AID(char aid[]);
+int calculate_str_length(char buffer[]);
 // UDP
 int login_user(char buffer[]);
 int logout_user(char buffer[]);
