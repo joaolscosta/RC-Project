@@ -45,10 +45,16 @@ void udp_message_handle(ssize_t n, char buffer[])
                 break;
             }
         }
-        // Credentials Wrong
     }
     else if (strcmp(code, "LOU") == 0) // Logout
     {
+        char uid[UID_SIZE], pass[PASS_SIZE];
+        sscanf(buffer, "%*s %s %s", uid, pass);
+        strcpy(reply_code, "RLO");
+        if (verify_user_credentials(uid, pass))
+        {
+            char status[4];
+        }
     }
     else if (strcmp(code, "UNR") == 0) // Unregister
     {

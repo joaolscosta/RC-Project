@@ -453,6 +453,32 @@ int check_user_password(char uid[], char pass[])
     return 0;
 }
 
+// Check Logged in
+int check_user_logged_in(char uid[])
+{
+    struct dirent **entrylist;
+    char dirname[7] = "USERS/";
+    int n_entries = scandir(dirname, &entrylist, NULL, alphasort);
+    if (n_entries < 0)
+    {
+        perror("scandir");
+        return 0;
+    }
+    // Care here on the loop for later should work for now
+    int logged_in = 0;
+    for (int i = 0; i < n_entries; ++i)
+    {
+        if (entrylist[i]->d_type == DT_DIR && strcmp(entrylist[i]->d_name, uid) == 0)
+        {
+            logged_in = 1;
+            break;
+        }
+        free(entrylist[i]); // Free memory for each entry
+    }
+    free(entrylist); // Free the entryList array
+    return logged_in;
+}
+
 // Checks if asset_file exists, if so returns the files size
 int check_asset_file(char *fname)
 {
