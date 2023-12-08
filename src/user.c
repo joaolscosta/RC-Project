@@ -60,6 +60,10 @@ void udp_message_handle(ssize_t n, char buffer[])
         {
             printf("Impossible to loggout user.\n");
         }
+        else if (strcmp(status, "UNR") == 0)
+        {
+            printf("User not registered.\n");
+        }
         else
         {
             printf("Unknown status received: %s\n", status);

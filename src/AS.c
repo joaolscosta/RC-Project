@@ -54,13 +54,75 @@ void udp_message_handle(ssize_t n, char buffer[])
         if (verify_user_credentials(uid, pass))
         {
             char status[4];
+            int result = logout_user(uid, pass);
+            switch (result)
+            {
+            case 0:
+                strcpy(status, "NOK");
+                sprintf(reply, "%s %s", reply_code, status);
+                break;
+            case 1:
+                strcpy(status, "OK");
+                sprintf(reply, "%s %s", reply_code, status);
+                break;
+            case 2:
+                strcpy(status, "UNR");
+                sprintf(reply, "%s %s", reply_code, status);
+                break;
+            }
         }
     }
     else if (strcmp(code, "UNR") == 0) // Unregister
     {
+        char uid[UID_SIZE], pass[PASS_SIZE];
+        sscanf(buffer, "%*s %s %s", uid, pass);
+        strcpy(reply_code, "RUR");
+        if (verify_user_credentials(uid, pass))
+        {
+            char status[4];
+            int result = logout_user(uid, pass);
+            switch (result)
+            {
+            case 0:
+                strcpy(status, "NOK");
+                sprintf(reply, "%s %s", reply_code, status);
+                break;
+            case 1:
+                strcpy(status, "OK");
+                sprintf(reply, "%s %s", reply_code, status);
+                break;
+            case 2:
+                strcpy(status, "UNR");
+                sprintf(reply, "%s %s", reply_code, status);
+                break;
+            }
+        }
     }
     else if (strcmp(code, "LMA") == 0) // MyActions
     {
+        char uid[UID_SIZE];
+        sscanf(buffer, "%*s %s %s", uid);
+        strcpy(reply_code, "RMA");
+        if (verify_UID(uid))
+        {
+            char status[4];
+            int result = myactions_user(uid); //! Aqui supostamente já tenho que passar os aid e os estados de cada um
+            switch (result)
+            {
+            case 0:
+                strcpy(status, "NOK");
+                sprintf(reply, "%s %s", reply_code, status);
+                break;
+            case 1:
+                strcpy(status, "OK");
+                sprintf(reply, "%s %s", reply_code, status);
+                break;
+            case 2:
+                strcpy(status, "UNR");
+                sprintf(reply, "%s %s", reply_code, status);
+                break;
+            }
+        }
     }
     else if (strcmp(code, "LMB") == 0) // MyBids
     {
