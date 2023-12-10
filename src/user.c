@@ -34,7 +34,6 @@ void udp_message_handle(ssize_t n, char buffer[])
     {
         if (strcmp(status, "OK") == 0)
         {
-            //! NECESSÁRIO VERIFICAR SE JÁ DEU LOGIN E SE SIM MENSAGEM DIFERENTE?
             printf("User logged in successfully.\n");
         }
         else if (strcmp(status, "NOK") == 0)
@@ -164,9 +163,9 @@ void udp_message_handle(ssize_t n, char buffer[])
 
 void udp_message(char buffer[])
 {
-    // printf("message to send->%s\n", buffer);
 
     fd = socket(AF_INET, SOCK_DGRAM, 0);
+
     if (fd == -1)
     {
         exit(1);
@@ -188,6 +187,7 @@ void udp_message(char buffer[])
         perror("sendto");
         exit(EXIT_FAILURE);
     }
+
     // Clean buffer pq é reutilizado para receber e enviar o msm buffer
     memset(buffer, 0, sizeof(buffer));
     // Recebimento da resposta do servidor

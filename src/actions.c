@@ -170,7 +170,7 @@ int unregister_user(char uid[], char pass[])
         return 2;
     }
 }
-
+/*
 int myactions_user(char uid[])
 {
     if (!check_user_logged_in(uid))
@@ -178,7 +178,8 @@ int myactions_user(char uid[])
         // STATUS NLG
         return 2;
     }
-    char auctions_list[999] = get_auctions_list(uid); //? É ESTE O MÁXIMO?
+    char auctions_list[999]; //? É ESTE O MÁXIMO?
+    strcpy(auctions_list, get_auctions_list(uid));
     int count = 0;
     for (int i = 0; i < sizeof(auctions_list); i++)
     {
@@ -203,7 +204,8 @@ int mybids_user(char uid[])
         // STATUS NLG
         return 2;
     }
-    char bids_list[999] = get_bid_list(uid); //? É ESTE O MÁXIMO?
+    char bids_list[999]; //? É ESTE O MÁXIMO?
+    strcpy(bids_list, GetBidList(...));
     int count = 0;
     for (int i = 0; i < sizeof(bids_list); i++)
     {
@@ -223,10 +225,11 @@ int mybids_user(char uid[])
 
 int list_all_auctions()
 {
-    // N entendi esta funcao mas yah
-    char bids_list[999] = get_all_auctions(); //? É ESTE O MÁXIMO?
+    // N entendi esta funcao mas yah - isto foi mega copypaste, já alterei
+    char auctions_list[999]; //? É ESTE O MÁXIMO?
+    strcpy(auctions_list, get_all_auctions());
     int count = 0;
-    for (int i = 0; i < sizeof(bids_list); i++)
+    for (int i = 0; i < sizeof(auctions_list); i++)
     {
         count++;
     }
@@ -246,7 +249,7 @@ int show_record_user(char buffer[])
 {
     return verify_AID(buffer);
 }
-
+*/
 int create_user_folder(char uid[], char pass[])
 {
     // create the User folder
@@ -636,7 +639,12 @@ int check_asset_file(char *fname)
 
 char get_auctions_list(char uid[])
 {
-    return 0;
+    return;
+}
+
+char get_all_auctions()
+{
+    return;
 }
 
 int GetBidList(int AID, BIDLIST *list)

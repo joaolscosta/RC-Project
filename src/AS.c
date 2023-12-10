@@ -99,6 +99,7 @@ void udp_message_handle(ssize_t n, char buffer[])
             }
         }
     }
+    /*
     else if (strcmp(code, "LMA") == 0) // MyActions
     {
         char uid[UID_SIZE];
@@ -173,6 +174,7 @@ void udp_message_handle(ssize_t n, char buffer[])
     {
         printf("Invalid handle input.\n");
     }
+    */
 
     // Send the Code Reply
     if (sendto(udp_fd, reply, strlen(reply), 0, (struct sockaddr *)&udp_addr, udp_addrlen) == -1)

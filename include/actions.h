@@ -62,10 +62,10 @@ int calculate_str_length(char buffer[]);
 int login_user(char uid[], char pass[]);
 int logout_user(char uid[], char pass[]);
 int unregister_user(char uid[], char pass[]);
-int myactions_user(char buffer[]);
-int mybids_user(char buffer[]);
-int list_all_auctions();
-int show_record_user(char buffer[]);
+// int myactions_user(char buffer[]);
+// int mybids_user(char buffer[]);
+// int list_all_auctions();
+// int show_record_user(char buffer[]);
 //  TCP
 /*
 int open(char buffer[]);
@@ -99,7 +99,7 @@ int check_user(char uid[]);
 int check_asset_file(char *fname);
 char get_auctions_list(char uid[]);
 char get_all_auctions();
-// int get_bid_list(int aid, BIDLIST *list);
-char get_bid_list(char uid[]);
+int GetBidList(int AID, BIDLIST *list);
+int LoadBid(const char *filepath, BIDLIST *list);
 /**/
 #endif
