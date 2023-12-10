@@ -127,21 +127,30 @@ int login_user(char uid[], char pass[])
         return 2;
     }
 }
-/*
-int logout_user(char buffer[])
-{
-    User user = parse_user_credentials(buffer);
-    return verify_user_credentials(user);
-}
-*/
 
-/*
-int unregister_user(char buffer[])
+int logout_user(char uid[], char pass[])
 {
-    User user = parse_user_credentials(buffer);
-    return verify_user_credentials(user);
+    if (check_user_logged_in(uid))
+    {
+        // STATUS OK
+        return 1;
+    }
+    else
+    {
+        // STATUS NOK
+        return 0;
+    }
+
+    if (!check_user(uid))
+    {
+        // STATUS UNR
+        return 2;
+    }
 }
-*/
+
+int unregister_user(char uid[], char pass[])
+{
+}
 
 int myactions_user(char buffer[])
 {
