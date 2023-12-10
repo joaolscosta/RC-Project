@@ -39,6 +39,20 @@ typedef struct Auction
     time_t start_fulltime;
 } Auction;
 
+typedef struct BIDINFO
+{
+    char UID[UID_SIZE];
+    int bid_value;
+    struct tm *bid_datetime;
+    time_t bid_sec_time;
+} BIDINFO;
+
+typedef struct
+{
+    int no_bids;
+    BIDINFO bids[50];
+} BIDLIST;
+
 // Verifications
 int verify_user_credentials(char uid[], char pass[]);
 int verify_UID(char uid[]);

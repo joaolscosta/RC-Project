@@ -25,6 +25,7 @@ void udp_message_handle(ssize_t n, char buffer[])
         char uid[UID_SIZE], pass[PASS_SIZE];
         sscanf(buffer, "%*s %s %s", uid, pass);
         strcpy(reply_code, "RLI");
+        // DUVIDA PRECISO DE MANDAR ALGO AO USER A DIZER Q N DEU OU SO ESCREVO NO TERMINAL DO SERVER?
         if (verify_user_credentials(uid, pass))
         {
             char status[4];
@@ -106,7 +107,8 @@ void udp_message_handle(ssize_t n, char buffer[])
         if (verify_UID(uid))
         {
             char status[4];
-            int result = myactions_user(uid); //! Aqui supostamente já tenho que passar os aid e os estados de cada um
+            int result = myactions_user(uid); //! Aqui supostamente já tenho que passar os aid e os estados de cada um não
+            // Não bro aqui não passas nada passo eu simplesmente no reply só
             switch (result)
             {
             case 0:

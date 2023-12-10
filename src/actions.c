@@ -130,42 +130,44 @@ int login_user(char uid[], char pass[])
 
 int logout_user(char uid[], char pass[])
 {
-    if (!check_user(uid))
+    // Check if is already registered
+    if (check_user(uid))
     {
-        // STATUS UNR
-        return 2;
-    }
-    if (check_user_logged_in(uid))
-    {
-        // STATUS OK
-        delete_login_file(uid);
-        return 1;
+        if (check_user_logged_in(uid))
+        {
+            delete_login_file(uid);
+            // STATUS OK
+            return 1;
+        }
+        // STATUS NOK
+        return 0;
     }
     else
     {
-        // STATUS NOK
-        return 0;
+        // STATUS UNR
+        return 2;
     }
 }
 
 int unregister_user(char uid[], char pass[])
 {
-    if (!check_user(uid))
+    // Check if is already registered
+    if (check_user(uid))
     {
-        // STATUS UNR
-        return 2;
-    }
-    if (check_user_logged_in(uid))
-    {
-        // STATUS OK
-        delete_login_file(uid);
-        remove_user_folder(uid, pass);
-        return 1;
+        if (check_user_logged_in(uid))
+        {
+            delete_pass_file(uid);
+            delete_login_file(uid);
+            // STATUS OK
+            return 1;
+        }
+        // STATUS NOK
+        return 0;
     }
     else
     {
-        // STATUS NOK
-        return 0;
+        // STATUS UNR
+        return 2;
     }
 }
 
@@ -221,6 +223,7 @@ int mybids_user(char uid[])
 
 int list_all_auctions()
 {
+    // N entendi esta funcao mas yah
     char bids_list[999] = get_all_auctions(); //? É ESTE O MÁXIMO?
     int count = 0;
     for (int i = 0; i < sizeof(bids_list); i++)
@@ -304,7 +307,7 @@ int create_pass_file(char uid[], char pass[])
 
 int create_login_file(char uid[])
 {
-    char login_file_path[35];
+    char login_file_path[30];
     FILE *login_file;
     // checkam o comprimento de uid no Guia acho q n é preciso once again se fizermos num parse ou num verify
     sprintf(login_file_path, "USERS/%s/%s_login.txt", uid, uid);
@@ -322,8 +325,22 @@ int create_login_file(char uid[])
 
 int delete_login_file(char uid[])
 {
-    char login_file_path[35];
+    char login_file_path[30];
     sprintf(login_file_path, "USERS/%s/%s_login.txt", uid, uid);
+    if (unlink(login_file_path) == 0)
+    {
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
+}
+
+int delete_pass_file(char uid[])
+{
+    char login_file_path[30];
+    sprintf(login_file_path, "USERS/%s/%s_pass.txt", uid, uid);
     if (unlink(login_file_path) == 0)
     {
         return 1;
@@ -509,7 +526,7 @@ int create_bid_file(Auction auc, User user, int bid_value)
         struct tm *current_time;
         time(&full_time);
         current_time = gmtime(&full_time);
-        fprintf(bid_file, "%s\n%d\n%4d−%02d−%02d %02d:%02d:%02d\n%ld", user.uid, bid_value, current_time->tm_year + 1900,
+        fprintf(bid_file, "%s %d %4d−%02d−%02d %02d:%02d:%02d %ld", user.uid, bid_value, current_time->tm_year + 1900,
                 current_time->tm_mon + 1, current_time->tm_mday, current_time->tm_hour, current_time->tm_min, current_time->tm_sec,
                 (long)(full_time - auc.start_fulltime));
         fclose(bid_file);
@@ -525,7 +542,8 @@ int create_bid_file(Auction auc, User user, int bid_value)
 int check_user(char uid[])
 {
     struct dirent **entrylist;
-    char dirname[7] = "USERS/";
+    char dirname[13];
+    sprintf(dirname, "USERS/%s", uid);
     int n_entries = scandir(dirname, &entrylist, NULL, alphasort);
     if (n_entries < 0)
     {
@@ -533,18 +551,20 @@ int check_user(char uid[])
         return 0;
     }
     // Care here on the loop for later should work for now
-    int folderFound = 0;
+    int pass_file_found = 0;
     for (int i = 0; i < n_entries; ++i)
     {
-        if (entrylist[i]->d_type == DT_DIR && strcmp(entrylist[i]->d_name, uid) == 0)
+        char pass_file[16];
+        sprintf(pass_file, "%s_pass.txt", uid);
+        if (entrylist[i]->d_type == DT_DIR && strcmp(entrylist[i]->d_name, pass_file) == 0)
         {
-            folderFound = 1;
+            pass_file_found = 1;
             break;
         }
         free(entrylist[i]); // Free memory for each entry
     }
     free(entrylist); // Free the entryList array
-    return folderFound;
+    return pass_file_found;
 }
 
 // Check password
@@ -574,7 +594,8 @@ int check_user_password(char uid[], char pass[])
 int check_user_logged_in(char uid[])
 {
     struct dirent **entrylist;
-    char dirname[7] = "USERS/";
+    char dirname[13];
+    sprintf(dirname, "USERS/%s", uid);
     int n_entries = scandir(dirname, &entrylist, NULL, alphasort);
     if (n_entries < 0)
     {
@@ -585,7 +606,9 @@ int check_user_logged_in(char uid[])
     int logged_in = 0;
     for (int i = 0; i < n_entries; ++i)
     {
-        if (entrylist[i]->d_type == DT_DIR && strcmp(entrylist[i]->d_name, uid) == 0)
+        char login_file[17];
+        sprintf(login_file, "%s_login.txt", uid);
+        if (entrylist[i]->d_type == DT_REG && strcmp(entrylist[i]->d_name, login_file) == 0)
         {
             logged_in = 1;
             break;
@@ -616,4 +639,58 @@ char get_auctions_list(char uid[])
     return 0;
 }
 
-char get_bid_list(char uid[]);
+int GetBidList(int AID, BIDLIST *list)
+{
+    struct dirent **filelist;
+    int nentries, nbids, len;
+    char dirname[20];
+    char pathname[32];
+    sprintf(dirname, "AUCTIONS/%03d/BIDS/", AID);
+    nentries = scandir(dirname, &filelist, 0, alphasort);
+    if (nentries <= 0)
+        return 0;
+    nbids = 0;
+    list->no_bids = 0;
+    while (nentries--)
+    {
+        len = strlen(filelist[nentries]->d_name);
+        if (len == 10)
+        {
+            sprintf(pathname, "AUCTIONS/%03d/BIDS/%s", AID, filelist[nentries]->d_name);
+            if (LoadBid(pathname, list))
+                ++nbids;
+        }
+        free(filelist[nentries]);
+        if (nbids == 50)
+            break;
+    }
+    free(filelist);
+    return nbids;
+}
+
+int LoadBid(const char *filepath, BIDLIST *list)
+{
+    FILE *file = fopen(filepath, "r");
+    if (file == NULL)
+    {
+        perror("Error opening bid file");
+        return 0;
+    }
+    if (list->no_bids < 50)
+    {
+        BIDINFO *current_bid = &list->bids[list->no_bids];
+        if (fscanf(file, "%s %6d %4d−%02d−%02d %02d:%02d:%02d %ld",
+                   current_bid->UID,
+                   &current_bid->bid_value,
+                   &current_bid->bid_datetime->tm_year,
+                   &current_bid->bid_datetime->tm_mon, &current_bid->bid_datetime->tm_mday, &current_bid->bid_datetime->tm_hour,
+                   &current_bid->bid_datetime->tm_min, &current_bid->bid_datetime->tm_sec, (long)&current_bid->bid_sec_time) == 9)
+        {
+            list->no_bids++;
+            fclose(file);
+            return 1; // Return 1 to indicate success
+        }
+    }
+    fclose(file);
+    return 0; // Return 0 to indicate failure or exceeding bid limit
+}
