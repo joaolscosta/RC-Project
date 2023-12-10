@@ -101,7 +101,7 @@ void udp_message_handle(ssize_t n, char buffer[])
     else if (strcmp(code, "LMA") == 0) // MyActions
     {
         char uid[UID_SIZE];
-        sscanf(buffer, "%*s %s %s", uid);
+        sscanf(buffer, "%*s %s", uid);
         strcpy(reply_code, "RMA");
         if (verify_UID(uid))
         {
@@ -112,23 +112,57 @@ void udp_message_handle(ssize_t n, char buffer[])
             case 0:
                 strcpy(status, "NOK");
                 sprintf(reply, "%s %s", reply_code, status);
+            case 2:
+                strcpy(status, "NLG");
+                sprintf(reply, "%s %s", reply_code, status);
                 break;
             case 1:
+                char auctions_list[999] = get_auctions_list(uid);
                 strcpy(status, "OK");
-                sprintf(reply, "%s %s", reply_code, status);
-                break;
-            case 2:
-                strcpy(status, "UNR");
-                sprintf(reply, "%s %s", reply_code, status);
-                break;
+                sprintf(reply, "%s %s %s", reply_code, status, auctions_list); //* Falta tratar da lista de auctions
             }
         }
     }
     else if (strcmp(code, "LMB") == 0) // MyBids
     {
+        char uid[UID_SIZE];
+        sscanf(buffer, "%*s %s", uid);
+        strcpy(reply_code, "RMB");
+        if (verify_UID(uid))
+        {
+            char status[4];
+            int result = mybids_user(uid); //! Aqui supostamente já tenho que passar os aid e os estados de cada um
+            switch (result)
+            {
+            case 0:
+                strcpy(status, "NOK");
+                sprintf(reply, "%s %s", reply_code, status);
+            case 2:
+                strcpy(status, "NLG");
+                sprintf(reply, "%s %s", reply_code, status);
+                break;
+            case 1:
+                char bid_list[999] = get_bid_list(uid);
+                strcpy(status, "OK");
+                sprintf(reply, "%s %s %s", reply_code, status, bid_list); //* Falta tratar da lista de bids
+            }
+        }
     }
     else if (strcmp(code, "LST") == 0) // List
     {
+        strcpy(reply_code, "RLS");
+        char status[4];
+        int result = list_all_auctions();
+        switch (result)
+        {
+        case 0:
+            strcpy(status, "NOK");
+            sprintf(reply, "%s %s", reply_code, status);
+        case 1:
+            char auctions_list[999] = get_all_auctions();
+            strcpy(status, "OK");
+            sprintf(reply, "%s %s %s", reply_code, status, auctions_list); //* Falta tratar da lista de bids
+        }
     }
     else if (strcmp(code, "SRC") == 0) // Show_record
     {

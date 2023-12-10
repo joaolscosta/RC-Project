@@ -130,9 +130,15 @@ int login_user(char uid[], char pass[])
 
 int logout_user(char uid[], char pass[])
 {
+    if (!check_user(uid))
+    {
+        // STATUS UNR
+        return 2;
+    }
     if (check_user_logged_in(uid))
     {
         // STATUS OK
+        delete_login_file(uid);
         return 1;
     }
     else
@@ -140,31 +146,97 @@ int logout_user(char uid[], char pass[])
         // STATUS NOK
         return 0;
     }
+}
 
+int unregister_user(char uid[], char pass[])
+{
     if (!check_user(uid))
     {
         // STATUS UNR
         return 2;
     }
+    if (check_user_logged_in(uid))
+    {
+        // STATUS OK
+        delete_login_file(uid);
+        remove_user_folder(uid, pass);
+        return 1;
+    }
+    else
+    {
+        // STATUS NOK
+        return 0;
+    }
 }
 
-int unregister_user(char uid[], char pass[])
+int myactions_user(char uid[])
 {
+    if (!check_user_logged_in(uid))
+    {
+        // STATUS NLG
+        return 2;
+    }
+    char auctions_list[999] = get_auctions_list(uid); //? É ESTE O MÁXIMO?
+    int count = 0;
+    for (int i = 0; i < sizeof(auctions_list); i++)
+    {
+        count++;
+    }
+    if (count == 0)
+    {
+        // STATUS NOK
+        return 0;
+    }
+    if (check_user(uid))
+    {
+        // STATUS OK
+        return 1;
+    }
 }
 
-int myactions_user(char buffer[])
+int mybids_user(char uid[])
 {
-    return verify_UID(buffer);
+    if (!check_user_logged_in(uid))
+    {
+        // STATUS NLG
+        return 2;
+    }
+    char bids_list[999] = get_bid_list(uid); //? É ESTE O MÁXIMO?
+    int count = 0;
+    for (int i = 0; i < sizeof(bids_list); i++)
+    {
+        count++;
+    }
+    if (count == 0)
+    {
+        // STATUS NOK
+        return 0;
+    }
+    if (check_user(uid))
+    {
+        // STATUS OK
+        return 1;
+    }
 }
 
-int mybids_user(char buffer[])
+int list_all_auctions()
 {
-    return verify_UID(buffer);
-}
-
-int list_user(char buffer[])
-{
-    return 1;
+    char bids_list[999] = get_all_auctions(); //? É ESTE O MÁXIMO?
+    int count = 0;
+    for (int i = 0; i < sizeof(bids_list); i++)
+    {
+        count++;
+    }
+    if (count == 0)
+    {
+        // STATUS NOK
+        return 0;
+    }
+    else
+    {
+        // STATUS OK
+        return 1;
+    }
 }
 
 int show_record_user(char buffer[])
@@ -205,6 +277,11 @@ int create_user_folder(char uid[], char pass[])
     {
         return 0;
     }
+}
+
+int remove_user_folder(char uid[], char pass[])
+{
+    return 0;
 }
 
 int create_pass_file(char uid[], char pass[])
@@ -533,3 +610,10 @@ int check_asset_file(char *fname)
         return 0;
     }
 }
+
+char get_auctions_list(char uid[])
+{
+    return 0;
+}
+
+char get_bid_list(char uid[]);

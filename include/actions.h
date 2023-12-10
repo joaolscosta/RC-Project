@@ -47,10 +47,10 @@ int calculate_str_length(char buffer[]);
 // UDP
 int login_user(char uid[], char pass[]);
 int logout_user(char uid[], char pass[]);
-int unregister_user(char buffer[]);
+int unregister_user(char uid[], char pass[]);
 int myactions_user(char buffer[]);
 int mybids_user(char buffer[]);
-int list_user(char buffer[]);
+int list_all_auctions();
 int show_record_user(char buffer[]);
 //  TCP
 /*
@@ -64,6 +64,7 @@ int bid(char buffer[]);
 // Server
 //  Users
 int create_user_folder(char uid[], char pass[]);
+int remove_user_folder(char uid[], char pass[]);
 int create_pass_file(char uid[], char pass[]);
 int create_login_file(char uid[]);
 int delete_login_file(char uid[]);
@@ -82,6 +83,9 @@ int create_bid_file(Auction auc, User user, int bid_value);
 // LookUps
 int check_user(char uid[]);
 int check_asset_file(char *fname);
+char get_auctions_list(char uid[]);
+char get_all_auctions();
 // int get_bid_list(int aid, BIDLIST *list);
+char get_bid_list(char uid[]);
 /**/
 #endif
