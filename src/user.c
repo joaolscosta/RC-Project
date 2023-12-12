@@ -32,7 +32,9 @@ void udp_message_handle(ssize_t n, char buffer[])
 {
     char code[4];
     char status[4];
+
     sscanf(buffer, "%s %s", code, status);
+
     if (strcmp(code, "RLI") == 0) // Resposta do Login
     {
         if (strcmp(status, "OK") == 0)
@@ -414,52 +416,50 @@ void tcp_message_handle(ssize_t n, char buffer[])
 
 void tcp_message(char buffer[])
 {
-    int fd = socket(AF_INET, SOCK_STREAM, 0);
+    int fd, errcode;
+    ssize_t n;
+    socklen_t addrlen;
+    struct addrinfo hints, *res;
+    struct sockaddr_in addr;
+    char receive_buffer[1024];
+
+    fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1)
     {
-        perror("socket");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
     memset(&hints, 0, sizeof hints);
     hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_socktype = SOCK_STREAM; // TCP socket
 
-    if (getaddrinfo(ASIP, ASport, &hints, &res) != 0)
+    errcode = getaddrinfo(ASIP, ASport, &hints, &res);
+    if (errcode != 0)
     {
-        perror("getaddrinfo");
-        exit(EXIT_FAILURE);
+        exit(1);
+    }
+    n = connect(fd, res->ai_addr, res->ai_addrlen);
+    if (n == -1)
+    {
+        exit(1);
     }
 
-    if (connect(fd, res->ai_addr, res->ai_addrlen) == -1)
-    {
-        perror("connect");
-        exit(EXIT_FAILURE);
-    }
-
-    if (write(fd, buffer, strlen(buffer)) == -1)
+    n = write(fd, buffer, strlen(buffer));
+    if (n == -1)
     {
         perror("write");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
 
-    memset(buffer, 0, sizeof(buffer));
-
-    ssize_t bytes_received = read(fd, buffer, sizeof(buffer) - 1);
-    if (bytes_received == -1)
+    n = read(fd, receive_buffer, sizeof(receive_buffer) - 1);
+    if (n == -1)
     {
         perror("read");
-        exit(EXIT_FAILURE);
+        exit(1);
     }
-    else if (bytes_received == 0)
-    {
-        printf("Connection closed by server.\n");
-    }
-    else
-    {
-        buffer[bytes_received] = '\0';
-        tcp_message_handle(bytes_received, buffer);
-    }
+
+    receive_buffer[n] = '\0';
+    tcp_message_handle(n, receive_buffer);
 
     freeaddrinfo(res);
     close(fd);
@@ -469,7 +469,7 @@ void tcp(char buffer[])
 {
 
     char command[33];
-    char reply[33];
+    char reply[50];
     sscanf(buffer, "%s", command);
 
     if (strcmp(command, "open") == 0) // Open auction
@@ -500,7 +500,7 @@ void tcp(char buffer[])
             char aid[4];
             sscanf(buffer, "close %s", aid);
             sprintf(reply, "CLS %s %s %s\n", current_login_uid, current_login_pass, aid);
-            tcp_message(buffer);
+            tcp_message(reply);
         }
     }
     else if ((strcmp(command, "show_asset") == 0) || (strcmp(command, "sa") == 0))
