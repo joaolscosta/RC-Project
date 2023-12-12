@@ -101,5 +101,6 @@ char get_auctions_list(char uid[]);
 char get_all_auctions();
 int GetBidList(int AID, BIDLIST *list);
 int LoadBid(const char *filepath, BIDLIST *list);
+void show_auctions_list(char buffer[]);
 /**/
 #endif

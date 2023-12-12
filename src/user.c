@@ -25,6 +25,9 @@ char tcp_input[][11] = {"open", "close", "show_asset", "bid"};
 char *ASIP = IP;
 char *ASport = DEFAULT_PORT;
 
+char current_login_uid[7];
+char current_login_pass[9];
+
 void udp_message_handle(ssize_t n, char buffer[])
 {
     char code[4];
@@ -53,6 +56,8 @@ void udp_message_handle(ssize_t n, char buffer[])
     {
         if (strcmp(status, "OK") == 0)
         {
+            strcpy(current_login_uid, "no");
+            strcpy(current_login_uid, "no");
             printf("User loggout successfully.\n");
         }
         else if (strcmp(status, "NOK") == 0)
@@ -72,6 +77,8 @@ void udp_message_handle(ssize_t n, char buffer[])
     {
         if (strcmp(status, "OK") == 0)
         {
+            strcpy(current_login_uid, "no");
+            strcpy(current_login_uid, "no");
             printf("User unregisted successfully.\n");
         }
         else if (strcmp(status, "NOK") == 0)
@@ -130,7 +137,7 @@ void udp_message_handle(ssize_t n, char buffer[])
         else if (strcmp(status, "OK") == 0)
         {
             printf("All actions list:\n");
-            write(1, buffer, n);
+            show_auctions_list(buffer);
             memset(buffer, 0, sizeof(buffer));
         }
         else
@@ -138,7 +145,7 @@ void udp_message_handle(ssize_t n, char buffer[])
             printf("Unknown status received: %s\n", status);
         }
     }
-    else if (strcmp(code, "RRC") == 0) // Resposta de List
+    else if (strcmp(code, "RRC") == 0) // Resposta de Record
     {
         if (strcmp(status, "NOK") == 0)
         {
@@ -192,16 +199,17 @@ void udp_message(char buffer[])
     memset(buffer, 0, sizeof(buffer));
     // Recebimento da resposta do servidor
     addrlen = sizeof(addr);
-    n = recvfrom(fd, buffer, 8192, 0, (struct sockaddr *)&addr, &addrlen);
+    char recv_buffer[8192];
+    n = recvfrom(fd, recv_buffer, 8192, 0, (struct sockaddr *)&addr, &addrlen);
     if (n == -1)
     {
         perror("recvfrom");
         exit(EXIT_FAILURE);
     }
 
-    udp_message_handle(n, buffer);
+    udp_message_handle(n, recv_buffer);
 
-    memset(buffer, 0, sizeof(buffer));
+    memset(recv_buffer, 0, sizeof(recv_buffer));
     freeaddrinfo(res);
     close(fd);
 }
@@ -216,66 +224,83 @@ void udp(char buffer[])
     {
         char uid[7], pass[9];
         sscanf(buffer, "login %s %s", uid, pass);
-        sprintf(reply, "LIN %s %s", uid, pass);
+        sprintf(reply, "LIN %s %s\n", uid, pass);
         if (verify_user_credentials(uid, pass) == 1)
         {
+            strcpy(current_login_uid, uid);
+            strcpy(current_login_pass, pass);
             udp_message(reply);
         }
     }
 
     else if (strcmp(command, "logout") == 0)
     {
-        char uid[7], pass[9];
-        sscanf(buffer, "%*s %s %s", uid, pass);
-        sprintf(reply, "LOU %s %s", uid, pass);
-        if (verify_user_credentials(uid, pass))
+        if (strcmp("no", current_login_uid) == 0)
         {
+            printf("User not logged in.\n");
+        }
+        else
+        {
+            sprintf(reply, "LOU %s %s\n", current_login_uid, current_login_pass);
             udp_message(reply);
         }
     }
     else if (strcmp(command, "unregister") == 0)
     {
-        char uid[7], pass[9];
-        sscanf(buffer, "%*s %s %s", uid, pass);
-        sprintf(reply, "UNR %s %s", uid, pass);
-        if (verify_user_credentials(uid, pass))
+        if (strcmp("no", current_login_uid) == 0)
         {
+            printf("User not logged in.\n");
+        }
+        else
+        {
+            sprintf(reply, "UNR %s %s\n", current_login_uid, current_login_pass);
             udp_message(reply);
         }
     }
     else if ((strcmp(command, "myauctions") == 0) || (strcmp(command, "ma") == 0))
     {
-        char uid[7];
-        sscanf(buffer, "%*s %s", uid);
-        sprintf(reply, "LMA %s", uid);
-        if (verify_UID(uid))
+        if (strcmp("no", current_login_uid) == 0)
         {
+            printf("User not logged in.\n");
+        }
+        else
+        {
+            sprintf(reply, "LMA %s\n", current_login_uid);
             udp_message(reply);
         }
     }
     else if ((strcmp(command, "mybids") == 0) || (strcmp(command, "mb") == 0))
     {
-        char uid[7];
-        sscanf(buffer, "%*s %s", uid);
-        sprintf(reply, "LMB %s", uid);
-        if (verify_UID(uid))
+        if (strcmp("no", current_login_uid) == 0)
         {
+            printf("User not logged in.\n");
+        }
+        else
+        {
+            sprintf(reply, "LMB %s\n", current_login_uid);
             udp_message(reply);
         }
     }
     else if ((strcmp(command, "list") == 0) || (strcmp(command, "l") == 0))
     {
-        strcpy(reply, "LST");
+        sprintf(reply, "LST\n");
         udp_message(reply);
     }
     else if ((strcmp(command, "show_record") == 0) || (strcmp(command, "sr") == 0))
     {
-        char aid[7];
+        char aid[10];
         sscanf(buffer, "%*s %s", aid);
-        sprintf(reply, "SRC %s", aid);
-        if (verify_AID(aid))
+        if (strlen(aid) != 3)
         {
-            udp_message(reply);
+            printf("Invalid input: aid size wrong.\n");
+        }
+        else
+        {
+            sprintf(reply, "SRC %s\n", aid);
+            if (verify_AID(aid))
+            {
+                udp_message(reply);
+            }
         }
     }
     else if (strcmp(command, "exit") == 0)
@@ -449,27 +474,41 @@ void tcp(char buffer[])
 
     if (strcmp(command, "open") == 0) // Open auction
     {
-        char uid[7], pass[9], auction_name[33], file_name[33], file_data[8192]; //! cuidado com os tamanhos dos chars
-        int start_value, time_active;
-        ssize_t file_size;
-        sscanf(buffer, "open %s %s %d %d", auction_name, file_name, start_value, time_active);
-        sprintf(reply, "LIN %s %s %s %d %d %s %d %s", uid, pass, auction_name, start_value, time_active, file_name, file_size, file_data);
+        if (strcmp("no", current_login_uid) == 0)
+        {
+            printf("User not logged in.\n");
+        }
+        else
+        {
+            char auction_name[33], file_name[33], file_data[8192]; //!  data e tamanho de ficheiro não tratado
+            int start_value, time_active;
+            ssize_t file_size;
 
-        tcp_message(buffer);
+            sscanf(buffer, "open %s %s %d %d", auction_name, file_name, start_value, time_active);
+            sprintf(reply, "LIN %s %s %s %d %d %s %d %s\n", current_login_uid, current_login_pass, auction_name, start_value, time_active, file_name, file_size, file_data);
+            tcp_message(buffer);
+        }
     }
     else if (strcmp(command, "close") == 0)
     {
-        char uid[7], pass[9], aid[4];
-        sscanf(buffer, "close %s", aid);
-        sprintf(reply, "CLS %s %s %s", uid, pass, aid);
-
-        tcp_message(buffer);
+        if (strcmp("no", current_login_uid) == 0)
+        {
+            printf("User not logged in.\n");
+        }
+        else //! Temos que verificar que só se pode fechar auctions do próprio user logado
+        {
+            char aid[4];
+            sscanf(buffer, "close %s", aid);
+            sprintf(reply, "CLS %s %s %s\n", current_login_uid, current_login_pass, aid);
+            tcp_message(buffer);
+        }
     }
     else if ((strcmp(command, "show_asset") == 0) || (strcmp(command, "sa") == 0))
     {
+        //! Só se pode ter uma auction a ocorrer de cada vez
         char aid[4];
         sscanf(buffer, "show_asset %s", aid);
-        sprintf(reply, "SAS %s", aid);
+        sprintf(reply, "SAS %s\n", aid);
 
         tcp_message(buffer);
     }
@@ -478,7 +517,7 @@ void tcp(char buffer[])
         char uid[7], pass[9], aid[4];
         int bid_value;
         sscanf(buffer, "bid %s %d", aid, bid_value);
-        sprintf(reply, "BID %s %s %s", uid, pass, aid, bid_value);
+        sprintf(reply, "BID %s %s %s\n", uid, pass, aid, bid_value);
 
         tcp_message(buffer);
     }

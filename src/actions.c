@@ -46,12 +46,6 @@ int verify_user_credentials(char uid[], char pass[])
 
 int verify_AID(char aid[])
 {
-    int aid_length = calculate_str_length(aid);
-    if ((aid_length - AID_SIZE) != 0)
-    {
-        printf("Invalid input: aid size wrong.\n");
-        return 0;
-    }
     for (int i = 0; i < strlen(aid); i++)
     {
         if (!isdigit(aid[i]))
@@ -701,4 +695,29 @@ int LoadBid(const char *filepath, BIDLIST *list)
     }
     fclose(file);
     return 0; // Return 0 to indicate failure or exceeding bid limit
+}
+
+void show_auctions_list(char buffer[])
+{
+    char *token;
+    const char delimiter[] = " ";
+    int count = 0;
+
+    // Divide a sequência em substrings usando strtok()
+    token = strtok(buffer, delimiter);
+
+    while (token != NULL)
+    {
+        count++;
+        if (count > 2)
+        {
+            printf("%s ", token);
+            if (count % 2 == 0)
+            { // Imprime uma nova linha a cada dois valores
+                printf("\n");
+            }
+        }
+
+        token = strtok(NULL, delimiter);
+    }
 }
