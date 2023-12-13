@@ -181,7 +181,7 @@ int myauctions_user(char uid[], AUCTIONLIST *list)
     }
     return 1; // STATUS OK
 }
-/*
+
 int mybids_user(char uid[])
 {
     if (!check_user_logged_in(uid))
@@ -190,7 +190,7 @@ int mybids_user(char uid[])
         return 2;
     }
     char bids_list[999]; //? É ESTE O MÁXIMO?
-    strcpy(bids_list, GetBidList(...));
+    // strcpy(bids_list, GetBidList(...));
     int count = 0;
     for (int i = 0; i < sizeof(bids_list); i++)
     {
@@ -207,12 +207,12 @@ int mybids_user(char uid[])
         return 1;
     }
 }
-*/
+
 int list_all_auctions()
 {
     // N entendi esta funcao mas yah - isto foi mega copypaste, já alterei
     char auctions_list[999]; //? É ESTE O MÁXIMO?
-    strcpy(auctions_list, get_all_auctions());
+    // strcpy(auctions_list, get_all_auctions());
     int count = 0;
     for (int i = 0; i < sizeof(auctions_list); i++)
     {
@@ -535,23 +535,24 @@ int check_user(char uid[])
     int n_entries = scandir(dirname, &entrylist, NULL, alphasort);
     if (n_entries < 0)
     {
-        perror("scandir");
         return 0;
     }
+    printf("devo printar: %d\n", n_entries);
     // Care here on the loop for later should work for now
     int pass_file_found = 0;
-    for (int i = 0; i < n_entries; ++i)
+    while (n_entries--)
     {
         char pass_file[16];
         sprintf(pass_file, "%s_pass.txt", uid);
-        if (entrylist[i]->d_type == DT_DIR && strcmp(entrylist[i]->d_name, pass_file) == 0)
+        if (entrylist[n_entries]->d_type == DT_REG && strcmp(entrylist[n_entries]->d_name, pass_file) == 0)
         {
             pass_file_found = 1;
+            free(entrylist[n_entries]); // Free memory for each entry
             break;
         }
-        free(entrylist[i]); // Free memory for each entry
+        free(entrylist[n_entries]); // Free memory for each entry
     }
-    free(entrylist); // Free the entryList array
+    free(entrylist);
     return pass_file_found;
 }
 
@@ -599,6 +600,7 @@ int check_user_logged_in(char uid[])
         if (entrylist[i]->d_type == DT_REG && strcmp(entrylist[i]->d_name, login_file) == 0)
         {
             logged_in = 1;
+            free(entrylist[i]); // Free memory for each entry
             break;
         }
         free(entrylist[i]); // Free memory for each entry
@@ -753,32 +755,15 @@ int LoadBid(const char *filepath, BIDLIST *list)
     fclose(file);
     return 0; // Return 0 to indicate failure or exceeding bid limit
 }
-/*
-void DisplayAuctions(BIDLIST *list, char *response)
+
+void DisplayAuctions(AUCTIONLIST *list, char *response)
 {
-    char *token;
-    const char delimiter[] = " ";
-    int count = 0;
-
-    // Divide a sequência em substrings usando strtok()
-    token = strtok(buffer, delimiter);
-
-    while (token != NULL)
+    for (int i = 0; i < list->no_aucs; ++i)
     {
-        count++;
-        if (count > 2)
-        {
-            printf("%s ", token);
-            if (count % 2 == 0)
-            { // Imprime uma nova linha a cada dois valores
-                printf("\n");
-            }
-        }
-
-        token = strtok(NULL, delimiter);
+        sprintf(response + strlen(response), " %03d 0", list->aucs[i]);
     }
 }
-*/
+
 int check_auction_name(char auction_name[])
 {
     int auction_name_length = calculate_str_length(auction_name);

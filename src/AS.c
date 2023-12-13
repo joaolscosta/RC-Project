@@ -108,22 +108,27 @@ void udp_message_handle(ssize_t n, char buffer[])
         {
             AUCTIONLIST list;
             char status[4];
-            int result = myactions_user(uid, &list);
-            char response[list.no_aucs * 6 + 7 + 1];
+            int result = myauctions_user(uid, &list);
             switch (result)
             {
             case 0:
                 strcpy(status, "NOK");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                break;
             case 2:
                 strcpy(status, "NLG");
                 sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             case 1:
+            {
+                char *response = (char *)malloc((list.no_aucs * 6 + 1) * sizeof(char));
                 DisplayAuctions(&list, response);
                 strcpy(status, "OK");
-                sprintf(reply, "%s %s%s\n", reply_code, status, response); //* Falta tratar da lista de auctions
+                reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 3) * sizeof(char));
+                sprintf(reply, "%s %s%s\n", reply_code, status, response);
+                free(response);
                 break;
+            }
             }
         }
     }
@@ -146,9 +151,9 @@ void udp_message_handle(ssize_t n, char buffer[])
                 sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             case 1:
-                char bid_list[999] = get_bid_list(uid);
+                // char bid_list[999] = get_bid_list(uid);
                 strcpy(status, "OK");
-                sprintf(reply, "%s %s %s\n", reply_code, status, bid_list); //* Falta tratar da lista de bids
+                sprintf(reply, "%s %s\n", reply_code, status); //* Falta tratar da lista de bids
             }
         }
     }
@@ -156,16 +161,15 @@ void udp_message_handle(ssize_t n, char buffer[])
     {
         strcpy(reply_code, "RLS");
         char status[4];
-        int result = list_all_auctions();
+        int result;
         switch (result)
         {
         case 0:
             strcpy(status, "NOK");
             sprintf(reply, "%s %s\n", reply_code, status);
         case 1:
-            char auctions_list[999] = get_all_auctions();
             strcpy(status, "OK");
-            sprintf(reply, "%s %s %s\n", reply_code, status, auctions_list); //* Falta tratar da lista de bids
+            sprintf(reply, "%s %s\n", reply_code, status); //* Falta tratar da lista de bids
         }
     }
     else if (strcmp(code, "SRC") == 0) // Show_record

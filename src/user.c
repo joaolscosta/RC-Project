@@ -138,9 +138,8 @@ void udp_message_handle(ssize_t n, char buffer[])
         }
         else if (strcmp(status, "OK") == 0)
         {
-            // printf("All actions list:\n");
-            show_auctions_list(buffer);
-            // write(1, buffer, n);
+            printf("All actions list:\n");
+            write(1, buffer, n);
             memset(buffer, 0, sizeof(buffer));
         }
         else
