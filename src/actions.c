@@ -108,6 +108,7 @@ int login_user(char uid[], char pass[])
         // Check password file
         if (check_user_password(uid, pass))
         {
+            create_login_file(uid);
             // Status OK
             return 1;
         }
@@ -172,8 +173,7 @@ int myauctions_user(char uid[], AUCTIONLIST *list)
         // STATUS NLG
         return 2;
     }
-    int no_aucs = GetHostedAuctionlist(uid, &list); // N SEI SE TENHO DE PASSAR REF AGAIN
-
+    int no_aucs = GetHostedAuctionlist(uid, &list);
     if (no_aucs == 0)
     {
         // STATUS NOK
@@ -182,52 +182,31 @@ int myauctions_user(char uid[], AUCTIONLIST *list)
     return 1; // STATUS OK
 }
 
-int mybids_user(char uid[])
+int mybids_user(char uid[], AUCTIONLIST *list)
 {
     if (!check_user_logged_in(uid))
     {
         // STATUS NLG
         return 2;
     }
-    char bids_list[999]; //? É ESTE O MÁXIMO?
-    // strcpy(bids_list, GetBidList(...));
-    int count = 0;
-    for (int i = 0; i < sizeof(bids_list); i++)
-    {
-        count++;
-    }
-    if (count == 0)
+    int no_aucs = GetBiddedAuctionlist(uid, &list);
+    if (no_aucs == 0)
     {
         // STATUS NOK
         return 0;
     }
-    if (check_user(uid))
-    {
-        // STATUS OK
-        return 1;
-    }
+    return 1; // STATUS OK
 }
 
-int list_all_auctions()
+int list_all_auctions(AUCTIONLIST *list)
 {
-    // N entendi esta funcao mas yah - isto foi mega copypaste, já alterei
-    char auctions_list[999]; //? É ESTE O MÁXIMO?
-    // strcpy(auctions_list, get_all_auctions());
-    int count = 0;
-    for (int i = 0; i < sizeof(auctions_list); i++)
-    {
-        count++;
-    }
-    if (count == 0)
+    int no_aucs = GetAuctionlist(&list);
+    if (no_aucs == 0)
     {
         // STATUS NOK
         return 0;
     }
-    else
-    {
-        // STATUS OK
-        return 1;
-    }
+    return 1; // STATUS OK
 }
 
 int show_record_user(char buffer[])
@@ -235,6 +214,7 @@ int show_record_user(char buffer[])
     return verify_AID(buffer);
 }
 
+// Register User
 int create_user_folder(char uid[], char pass[])
 {
     // create the User folder
@@ -266,8 +246,19 @@ int create_user_folder(char uid[], char pass[])
     }
     else
     {
-        return 0;
+        if (!create_pass_file(uid, pass))
+        {
+            rmdir(folder_Path);
+            return 0;
+        }
+        if (!create_login_file(uid))
+        {
+            rmdir(folder_Path);
+            return 0;
+        }
+        return 1;
     }
+    return 0;
 }
 
 int remove_user_folder(char uid[], char pass[])
@@ -537,7 +528,6 @@ int check_user(char uid[])
     {
         return 0;
     }
-    printf("devo printar: %d\n", n_entries);
     // Care here on the loop for later should work for now
     int pass_file_found = 0;
     while (n_entries--)
@@ -726,6 +716,33 @@ int GetBidList(int AID, BIDLIST *list)
     }
     free(filelist);
     return nbids;
+}
+
+int GetAuctionlist(AUCTIONLIST *list)
+{
+    struct dirent **filelist;
+    int nentries, naucs, len;
+    char dirname[11];
+    char pathname[32];
+    sprintf(dirname, "AUCTIONS/");
+    nentries = scandir(dirname, &filelist, 0, alphasort);
+    if (nentries <= 0)
+        return 0;
+    naucs = 0;
+    list->no_aucs = 0;
+    while (nentries--)
+    {
+        len = strlen(filelist[nentries]->d_name);
+        if (len == 3)
+        {
+            sprintf(pathname, "AUCTIONS/%s", filelist[nentries]->d_name);
+            if (LoadAuction(pathname, list))
+                ++naucs;
+        }
+        free(filelist[nentries]);
+    }
+    free(filelist);
+    return naucs;
 }
 
 int LoadBid(const char *filepath, BIDLIST *list)

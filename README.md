@@ -29,7 +29,9 @@
 
 - No unregister temos que verificar se o cliente está logado no cliente ou no servidor?
 
-- Onde é que vamos armazenar os dados? Só porque estou com dificuldades em perceber o que se faz para ver se já existe algum utilizador resgistado ou assim
+- (Recente) logout por parte do SV ou de USER logout NOK. Que acontece se fizer logo logout primeira coisa no programa?
+
+- Q caralhos acontece se o user connectar se a orts ou ips errados etc..
 
 # Stresses
 

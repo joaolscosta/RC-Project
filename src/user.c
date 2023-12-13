@@ -172,7 +172,6 @@ void udp_message_handle(ssize_t n, char buffer[])
 
 void udp_message(char buffer[])
 {
-
     fd = socket(AF_INET, SOCK_DGRAM, 0);
 
     if (fd == -1)
@@ -237,15 +236,8 @@ void udp(char buffer[])
 
     else if (strcmp(command, "logout") == 0)
     {
-        if (strcmp("no", current_login_uid) == 0)
-        {
-            printf("User not logged in.\n");
-        }
-        else
-        {
-            sprintf(reply, "LOU %s %s\n", current_login_uid, current_login_pass);
-            udp_message(reply);
-        }
+        sprintf(reply, "LOU %s %s\n", current_login_uid, current_login_pass);
+        udp_message(reply);
     }
     else if (strcmp(command, "unregister") == 0)
     {
@@ -311,8 +303,7 @@ void udp(char buffer[])
     }
     else
     {
-        perror("invalid input");
-        exit(EXIT_FAILURE);
+        printf("Invalid input: %s\n", command);
     }
     memset(buffer, 0, sizeof(buffer));
 }
@@ -580,6 +571,7 @@ int main(int argc, char const *argv[])
     int max_fd = STDIN_FILENO;
 
     strcpy(current_login_uid, "no");
+    strcpy(current_login_pass, "no");
 
     while (1)
     {

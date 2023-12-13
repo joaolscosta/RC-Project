@@ -139,21 +139,29 @@ void udp_message_handle(ssize_t n, char buffer[])
         strcpy(reply_code, "RMB");
         if (verify_UID(uid))
         {
+            AUCTIONLIST list;
             char status[4];
-            int result = mybids_user(uid); //! Aqui supostamente já tenho que passar os aid e os estados de cada um
+            int result = mybids_user(uid, &list);
             switch (result)
             {
             case 0:
                 strcpy(status, "NOK");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                break;
             case 2:
                 strcpy(status, "NLG");
                 sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             case 1:
-                // char bid_list[999] = get_bid_list(uid);
+            {
+                char *response = (char *)malloc((list.no_aucs * 6 + 1) * sizeof(char));
+                DisplayAuctions(&list, response);
                 strcpy(status, "OK");
-                sprintf(reply, "%s %s\n", reply_code, status); //* Falta tratar da lista de bids
+                reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 3) * sizeof(char));
+                sprintf(reply, "%s %s%s\n", reply_code, status, response);
+                free(response);
+                break;
+            }
             }
         }
     }
@@ -161,22 +169,58 @@ void udp_message_handle(ssize_t n, char buffer[])
     {
         strcpy(reply_code, "RLS");
         char status[4];
-        int result;
+        AUCTIONLIST list;
+        int result = list_all_auctions(&list);
         switch (result)
         {
         case 0:
             strcpy(status, "NOK");
             sprintf(reply, "%s %s\n", reply_code, status);
+            break;
         case 1:
+        {
+            char *response = (char *)malloc((list.no_aucs * 6 + 1) * sizeof(char));
+            DisplayAuctions(&list, response);
             strcpy(status, "OK");
-            sprintf(reply, "%s %s\n", reply_code, status); //* Falta tratar da lista de bids
+            reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 3) * sizeof(char));
+            sprintf(reply, "%s %s%s\n", reply_code, status, response);
+            free(response);
+            break;
+        }
         }
     }
     else if (strcmp(code, "SRC") == 0) // Show_record
     {
+        char aid[AID_SIZE];
+        sscanf(buffer, "%*s %s", aid);
+        strcpy(reply_code, "RUR");
+        if (verify_AID(aid))
+        {
+            /*
+            char status[4];
+            int result = unregister_user(uid, pass);
+            switch (result)
+            {
+            case 0:
+                strcpy(status, "NOK");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            case 1:
+                strcpy(status, "OK");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            case 2:
+                strcpy(status, "UNR");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            }
+            */
+        }
     }
     else
     {
+        strcpy(reply_code, "ERR");
+        sprintf(reply, "%s\n", reply_code);
         printf("Invalid handle input.\n");
     }
 

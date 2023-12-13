@@ -68,10 +68,10 @@ int calculate_str_length(char buffer[]);
 int login_user(char uid[], char pass[]);
 int logout_user(char uid[], char pass[]);
 int unregister_user(char uid[], char pass[]);
-// int myactions_user(char buffer[]);
-// int mybids_user(char buffer[]);
-// int list_all_auctions();
-// int show_record_user(char buffer[]);
+int myauctions_user(char uid[], AUCTIONLIST *list);
+int mybids_user(char uid[], AUCTIONLIST *list);
+int list_all_auctions(AUCTIONLIST *list);
+int show_record_user(char buffer[]);
 //  TCP
 /*
 int open(char buffer[]);
@@ -110,6 +110,7 @@ int LoadAuction(const char *filepath, AUCTIONLIST *list);
 int GetBidList(int AID, BIDLIST *list);
 int GetBiddedAuctionlist(char uid[], AUCTIONLIST *list);
 int GetBidList(int AID, BIDLIST *list);
+int GetAuctionlist(AUCTIONLIST *list);
 int LoadBid(const char *filepath, BIDLIST *list);
 void DisplayAuctions(AUCTIONLIST *list, char *response);
 int check_auction_name(char auction_name[]);
