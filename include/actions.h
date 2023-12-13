@@ -108,5 +108,11 @@ char get_all_auctions();
 int GetBidList(int AID, BIDLIST *list);
 int LoadBid(const char *filepath, BIDLIST *list);
 void show_auctions_list(char buffer[]);
+int check_auction_name(char auction_name[]);
+int check_file_name(char file_name[]);
+int check_start_value(int start_value);
+int check_time_active_input(int time_active);
+int check_open_credentials(char auction_name[], char file_name[], int start_value, int time_active);
+
 /**/
 #endif

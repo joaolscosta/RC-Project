@@ -753,7 +753,109 @@ int LoadBid(const char *filepath, BIDLIST *list)
     fclose(file);
     return 0; // Return 0 to indicate failure or exceeding bid limit
 }
-
+/*
 void DisplayAuctions(BIDLIST *list, char *response)
 {
+    char *token;
+    const char delimiter[] = " ";
+    int count = 0;
+
+    // Divide a sequência em substrings usando strtok()
+    token = strtok(buffer, delimiter);
+
+    while (token != NULL)
+    {
+        count++;
+        if (count > 2)
+        {
+            printf("%s ", token);
+            if (count % 2 == 0)
+            { // Imprime uma nova linha a cada dois valores
+                printf("\n");
+            }
+        }
+
+        token = strtok(NULL, delimiter);
+    }
+}
+*/
+int check_auction_name(char auction_name[])
+{
+    int auction_name_length = calculate_str_length(auction_name);
+    if (auction_name_length > 10)
+    {
+        printf("Invalid input: auction size wrong.\n");
+        return 0;
+    }
+    for (int i = 0; i < strlen(auction_name); i++)
+    {
+        if (!isdigit(auction_name[i]) || !isalpha(auction_name[i]))
+        {
+            printf("Invalid input: auctions not alphanumerical.\n");
+            return 0;
+        }
+    }
+    return 1;
+}
+
+int check_file_name(char file_name[])
+{
+    return 1;
+}
+
+int check_start_value(int start_value)
+{
+    int count = 0;
+
+    if (start_value == 0) //! verificar isto
+    {
+        return 0;
+    }
+
+    while (start_value != 0)
+    {
+        start_value = start_value / 10;
+        count++;
+    }
+
+    if (count > 6)
+    {
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
+int check_time_active_input(int time_active)
+{
+    int count = 0;
+
+    while (time_active != 0)
+    {
+        time_active = time_active / 10;
+        count++;
+    }
+
+    if (count > 5)
+    {
+        return 0;
+    }
+    else
+    {
+        return 1;
+    }
+}
+
+int check_open_credentials(char auction_name[], char file_name[], int start_value, int time_active)
+{
+    int check = 0;
+
+    check = check_auction_name(auction_name);
+    check = check_file_name(file_name);
+    check = check_start_value(start_value);
+    check = check_time_active_input(time_active);
+
+    return check;
 }

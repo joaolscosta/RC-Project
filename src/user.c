@@ -138,8 +138,9 @@ void udp_message_handle(ssize_t n, char buffer[])
         }
         else if (strcmp(status, "OK") == 0)
         {
-            printf("All actions list:\n");
+            // printf("All actions list:\n");
             show_auctions_list(buffer);
+            // write(1, buffer, n);
             memset(buffer, 0, sizeof(buffer));
         }
         else
@@ -485,8 +486,11 @@ void tcp(char buffer[])
             ssize_t file_size;
 
             sscanf(buffer, "open %s %s %d %d", auction_name, file_name, start_value, time_active);
-            sprintf(reply, "LIN %s %s %s %d %d %s %d %s\n", current_login_uid, current_login_pass, auction_name, start_value, time_active, file_name, file_size, file_data);
-            tcp_message(buffer);
+            if (check_open_credentials(auction_name, file_name, start_value, time_active))
+            {
+                sprintf(reply, "LIN %s %s %s %d %d %s %d %s\n", current_login_uid, current_login_pass, auction_name, start_value, time_active, file_name, file_size, file_data);
+                tcp_message(buffer);
+            }
         }
     }
     else if (strcmp(command, "close") == 0)
@@ -576,6 +580,8 @@ int main(int argc, char const *argv[])
     fd_set inputs, newfds;
     int max_fd = STDIN_FILENO;
 
+    strcpy(current_login_uid, "no");
+
     while (1)
     {
 
@@ -608,5 +614,6 @@ int main(int argc, char const *argv[])
             }
         }
     }
+
     return 0;
 }
