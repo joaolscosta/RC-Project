@@ -165,6 +165,7 @@ void udp_message_handle(ssize_t n, char buffer[])
             }
         }
     }
+    /*
     else if (strcmp(code, "LST") == 0) // List
     {
         strcpy(reply_code, "RLS");
@@ -189,6 +190,7 @@ void udp_message_handle(ssize_t n, char buffer[])
         }
         }
     }
+    */
     else if (strcmp(code, "SRC") == 0) // Show_record
     {
         char aid[AID_SIZE];

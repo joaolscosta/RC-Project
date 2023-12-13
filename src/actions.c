@@ -802,7 +802,64 @@ int check_auction_name(char auction_name[])
 
 int check_file_name(char file_name[])
 {
-    return 1;
+    FILE *file_readed;
+    file_readed = fopen(file_name, "r");
+    if (file_readed == NULL)
+    {
+        printf("File not found.\n");
+        return 0;
+    }
+    else
+    {
+        char data[8192];
+        if (fscanf(file_readed, "%s", data) == 1)
+        {
+        }
+        fclose(file_readed);
+    }
+    return 0;
+}
+
+char read_file_data(char file_name[])
+{
+    char data[8192];
+    int character;
+    if (fscanf(file_name, "%s", data) == 1)
+    {
+        char *buffer;
+        ssize_t index = 0;
+        while ((character = fgetc(file_name)) != EOF)
+        {
+            data[index++] = (char)character;
+        }
+
+        buffer[index] = '\0';
+        fclose(file_name);
+        return data;
+    }
+    else
+    {
+        return "No data.";
+    }
+}
+
+long int get_file_size(char file_name[])
+{
+    FILE *file = fopen(file_name, "rb");
+
+    if (file != NULL)
+    {
+        long int file_size;
+
+        // Move the file pointer to the end of the file
+        fseek(file, 0, SEEK_END);
+
+        // Get the current position of the file pointer which indicates the size of the file
+        file_size = ftell(file);
+
+        fclose(file);
+        return file_size;
+    }
 }
 
 int check_start_value(int start_value)
