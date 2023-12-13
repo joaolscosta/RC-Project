@@ -164,33 +164,24 @@ int unregister_user(char uid[], char pass[])
         return 2;
     }
 }
-/*
-int myactions_user(char uid[])
+
+int myauctions_user(char uid[], AUCTIONLIST *list)
 {
     if (!check_user_logged_in(uid))
     {
         // STATUS NLG
         return 2;
     }
-    char auctions_list[999]; //? É ESTE O MÁXIMO?
-    strcpy(auctions_list, get_auctions_list(uid));
-    int count = 0;
-    for (int i = 0; i < sizeof(auctions_list); i++)
-    {
-        count++;
-    }
-    if (count == 0)
+    int no_aucs = GetHostedAuctionlist(uid, &list); // N SEI SE TENHO DE PASSAR REF AGAIN
+
+    if (no_aucs == 0)
     {
         // STATUS NOK
         return 0;
     }
-    if (check_user(uid))
-    {
-        // STATUS OK
-        return 1;
-    }
+    return 1; // STATUS OK
 }
-
+/*
 int mybids_user(char uid[])
 {
     if (!check_user_logged_in(uid))
@@ -216,7 +207,7 @@ int mybids_user(char uid[])
         return 1;
     }
 }
-
+*/
 int list_all_auctions()
 {
     // N entendi esta funcao mas yah - isto foi mega copypaste, já alterei
@@ -243,7 +234,7 @@ int show_record_user(char buffer[])
 {
     return verify_AID(buffer);
 }
-*/
+
 int create_user_folder(char uid[], char pass[])
 {
     // create the User folder
@@ -631,14 +622,79 @@ int check_asset_file(char *fname)
     }
 }
 
-char get_auctions_list(char uid[])
+int GetHostedAuctionlist(char uid[], AUCTIONLIST *list)
 {
-    return;
+    struct dirent **filelist;
+    int nentries, naucs, len;
+    char dirname[21];
+    char pathname[32];
+    sprintf(dirname, "USERS/%s/HOSTED/", uid);
+    nentries = scandir(dirname, &filelist, 0, alphasort);
+    if (nentries <= 0)
+        return 0;
+    naucs = 0;
+    list->no_aucs = 0;
+    while (nentries--)
+    {
+        len = strlen(filelist[nentries]->d_name);
+        if (len == 10)
+        {
+            sprintf(pathname, "USERS/%s/HOSTED/%s", uid, filelist[nentries]->d_name);
+            if (LoadAuction(pathname, list))
+                ++naucs;
+        }
+        free(filelist[nentries]);
+        if (naucs == 50)
+            break;
+    }
+    free(filelist);
+    return naucs;
 }
 
-char get_all_auctions()
+int LoadAuction(const char *filepath, AUCTIONLIST *list)
 {
-    return;
+    // Extract the AID from the filename
+    char *token = strtok(filepath, ".");
+    if (token != NULL)
+    {
+        int auctionID = atoi(token);
+        // Store the auction ID in the AUCTIONLIST structure
+        if (list->no_aucs < 50)
+        {
+            list->aucs[list->no_aucs++] = auctionID;
+            return 1; // Success
+        }
+    }
+    return 0; // Failed to load auction or list full
+}
+
+int GetBiddedAuctionlist(char uid[], AUCTIONLIST *list)
+{
+    struct dirent **filelist;
+    int nentries, naucs, len;
+    char dirname[21];
+    char pathname[32];
+    sprintf(dirname, "USERS/%s/BIDDED/", uid);
+    nentries = scandir(dirname, &filelist, 0, alphasort);
+    if (nentries <= 0)
+        return 0;
+    naucs = 0;
+    list->no_aucs = 0;
+    while (nentries--)
+    {
+        len = strlen(filelist[nentries]->d_name);
+        if (len == 10)
+        {
+            sprintf(pathname, "USERS/%s/BIDDED/%s", uid, filelist[nentries]->d_name);
+            if (LoadAuction(pathname, list))
+                ++naucs;
+        }
+        free(filelist[nentries]);
+        if (naucs == 50)
+            break;
+    }
+    free(filelist);
+    return naucs;
 }
 
 int GetBidList(int AID, BIDLIST *list)
@@ -678,6 +734,7 @@ int LoadBid(const char *filepath, BIDLIST *list)
         perror("Error opening bid file");
         return 0;
     }
+
     if (list->no_bids < 50)
     {
         BIDINFO *current_bid = &list->bids[list->no_bids];
@@ -697,27 +754,6 @@ int LoadBid(const char *filepath, BIDLIST *list)
     return 0; // Return 0 to indicate failure or exceeding bid limit
 }
 
-void show_auctions_list(char buffer[])
+void DisplayAuctions(BIDLIST *list, char *response)
 {
-    char *token;
-    const char delimiter[] = " ";
-    int count = 0;
-
-    // Divide a sequência em substrings usando strtok()
-    token = strtok(buffer, delimiter);
-
-    while (token != NULL)
-    {
-        count++;
-        if (count > 2)
-        {
-            printf("%s ", token);
-            if (count % 2 == 0)
-            { // Imprime uma nova linha a cada dois valores
-                printf("\n");
-            }
-        }
-
-        token = strtok(NULL, delimiter);
-    }
 }

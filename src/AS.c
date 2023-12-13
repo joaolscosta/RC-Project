@@ -16,10 +16,10 @@ int verbose = 0;
 
 void udp_message_handle(ssize_t n, char buffer[])
 {
-    char reply[128];
+    char *reply = (char *)malloc(9 * sizeof(char));
     char code[4];
     char reply_code[4];
-    sscanf(buffer, "%s ", code);
+    sscanf(buffer, "%s ", code);  // TODO VERIFICAR SE TOU A RECEBER A MSG COM \n NO FIM !!!
     if (strcmp(code, "LIN") == 0) // Login
     {
         char uid[UID_SIZE], pass[PASS_SIZE];
@@ -34,15 +34,15 @@ void udp_message_handle(ssize_t n, char buffer[])
             {
             case 0:
                 strcpy(status, "NOK");
-                sprintf(reply, "%s %s", reply_code, status);
+                sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             case 1:
                 strcpy(status, "OK");
-                sprintf(reply, "%s %s", reply_code, status);
+                sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             case 2:
                 strcpy(status, "REG");
-                sprintf(reply, "%s %s", reply_code, status);
+                sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             }
         }
@@ -60,15 +60,15 @@ void udp_message_handle(ssize_t n, char buffer[])
             {
             case 0:
                 strcpy(status, "NOK");
-                sprintf(reply, "%s %s", reply_code, status);
+                sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             case 1:
                 strcpy(status, "OK");
-                sprintf(reply, "%s %s", reply_code, status);
+                sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             case 2:
                 strcpy(status, "UNR");
-                sprintf(reply, "%s %s", reply_code, status);
+                sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             }
         }
@@ -86,20 +86,19 @@ void udp_message_handle(ssize_t n, char buffer[])
             {
             case 0:
                 strcpy(status, "NOK");
-                sprintf(reply, "%s %s", reply_code, status);
+                sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             case 1:
                 strcpy(status, "OK");
-                sprintf(reply, "%s %s", reply_code, status);
+                sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             case 2:
                 strcpy(status, "UNR");
-                sprintf(reply, "%s %s", reply_code, status);
+                sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             }
         }
     }
-    /*
     else if (strcmp(code, "LMA") == 0) // MyActions
     {
         char uid[UID_SIZE];
@@ -107,22 +106,24 @@ void udp_message_handle(ssize_t n, char buffer[])
         strcpy(reply_code, "RMA");
         if (verify_UID(uid))
         {
+            AUCTIONLIST list;
             char status[4];
-            int result = myactions_user(uid); //! Aqui supostamente já tenho que passar os aid e os estados de cada um não
-            // Não bro aqui não passas nada passo eu simplesmente no reply só
+            int result = myactions_user(uid, &list);
+            char response[list.no_aucs * 6 + 7 + 1];
             switch (result)
             {
             case 0:
                 strcpy(status, "NOK");
-                sprintf(reply, "%s %s", reply_code, status);
+                sprintf(reply, "%s %s\n", reply_code, status);
             case 2:
                 strcpy(status, "NLG");
-                sprintf(reply, "%s %s", reply_code, status);
+                sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             case 1:
-                char auctions_list[999] = get_auctions_list(uid);
+                DisplayAuctions(&list, response);
                 strcpy(status, "OK");
-                sprintf(reply, "%s %s %s", reply_code, status, auctions_list); //* Falta tratar da lista de auctions
+                sprintf(reply, "%s %s%s\n", reply_code, status, response); //* Falta tratar da lista de auctions
+                break;
             }
         }
     }
@@ -139,15 +140,15 @@ void udp_message_handle(ssize_t n, char buffer[])
             {
             case 0:
                 strcpy(status, "NOK");
-                sprintf(reply, "%s %s", reply_code, status);
+                sprintf(reply, "%s %s\n", reply_code, status);
             case 2:
                 strcpy(status, "NLG");
-                sprintf(reply, "%s %s", reply_code, status);
+                sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             case 1:
                 char bid_list[999] = get_bid_list(uid);
                 strcpy(status, "OK");
-                sprintf(reply, "%s %s %s", reply_code, status, bid_list); //* Falta tratar da lista de bids
+                sprintf(reply, "%s %s %s\n", reply_code, status, bid_list); //* Falta tratar da lista de bids
             }
         }
     }
@@ -160,11 +161,11 @@ void udp_message_handle(ssize_t n, char buffer[])
         {
         case 0:
             strcpy(status, "NOK");
-            sprintf(reply, "%s %s", reply_code, status);
+            sprintf(reply, "%s %s\n", reply_code, status);
         case 1:
             char auctions_list[999] = get_all_auctions();
             strcpy(status, "OK");
-            sprintf(reply, "%s %s %s", reply_code, status, auctions_list); //* Falta tratar da lista de bids
+            sprintf(reply, "%s %s %s\n", reply_code, status, auctions_list); //* Falta tratar da lista de bids
         }
     }
     else if (strcmp(code, "SRC") == 0) // Show_record
@@ -174,14 +175,15 @@ void udp_message_handle(ssize_t n, char buffer[])
     {
         printf("Invalid handle input.\n");
     }
-    */
 
     // Send the Code Reply
     if (sendto(udp_fd, reply, strlen(reply), 0, (struct sockaddr *)&udp_addr, udp_addrlen) == -1)
     {
+        free(reply);
         perror("sendto");
         exit(1);
     }
+    free(reply);
 }
 
 void server()

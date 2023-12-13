@@ -39,6 +39,12 @@ typedef struct Auction
     time_t start_fulltime;
 } Auction;
 
+typedef struct AUCTIONLIST
+{
+    int no_aucs;
+    int aucs[50]; // aids
+} AUCTIONLIST;
+
 typedef struct BIDINFO
 {
     char UID[UID_SIZE];
