@@ -102,11 +102,11 @@ int check_time_active(int current_time, int max_time_active)
 int login_user(char uid[], char pass[])
 {
     // Check if is already registered
-    if (check_user(uid))
+    if (LookUpUser(uid))
     {
         // User already Registered
         // Check password file
-        if (check_user_password(uid, pass))
+        if (LookUpUserPassword(uid, pass))
         {
             create_login_file(uid);
             // Status OK
@@ -126,9 +126,9 @@ int login_user(char uid[], char pass[])
 int logout_user(char uid[], char pass[])
 {
     // Check if is already registered
-    if (check_user(uid))
+    if (LookUpUser(uid))
     {
-        if (check_user_logged_in(uid))
+        if (LookUpUserLogin(uid))
         {
             delete_login_file(uid);
             // STATUS OK
@@ -147,9 +147,9 @@ int logout_user(char uid[], char pass[])
 int unregister_user(char uid[], char pass[])
 {
     // Check if is already registered
-    if (check_user(uid))
+    if (LookUpUser(uid))
     {
-        if (check_user_logged_in(uid))
+        if (LookUpUserLogin(uid))
         {
             delete_pass_file(uid);
             delete_login_file(uid);
@@ -168,7 +168,7 @@ int unregister_user(char uid[], char pass[])
 
 int myauctions_user(char uid[], AUCTIONLIST *list)
 {
-    if (!check_user_logged_in(uid))
+    if (!LookUpUserLogin(uid))
     {
         // STATUS NLG
         return 2;
@@ -184,7 +184,7 @@ int myauctions_user(char uid[], AUCTIONLIST *list)
 
 int mybids_user(char uid[], AUCTIONLIST *list)
 {
-    if (!check_user_logged_in(uid))
+    if (!LookUpUserLogin(uid))
     {
         // STATUS NLG
         return 2;
@@ -209,9 +209,18 @@ int list_all_auctions(AUCTIONLIST *list)
     return 1; // STATUS OK
 }
 
-int show_record_user(char buffer[])
+int show_record_user(int aid, AUCTIONINFO *auc_info, BIDLIST *bid_list)
 {
-    return verify_AID(buffer);
+    if (!LookUpAuction(aid, &auc_info, &bid_list))
+    {
+        // STATUS NOK
+        return 0;
+    }
+    else
+    {
+        // STATUS OK
+        return 1;
+    }
 }
 
 // Register User
@@ -258,11 +267,6 @@ int create_user_folder(char uid[], char pass[])
         }
         return 1;
     }
-    return 0;
-}
-
-int remove_user_folder(char uid[], char pass[])
-{
     return 0;
 }
 
@@ -358,8 +362,9 @@ int create_bidded_folder(char uid[])
     }
 }
 
-int create_hosted_auction_file(User user, Auction auc)
+int create_hosted_auction_file(User user, AUCTIONINFO auc)
 {
+    /*
     char hosted_file_path[28];
     FILE *hosted_file;
     sprintf(hosted_file_path, "USERS/%s/HOSTED/%03d.txt", user.uid, auc.aid);
@@ -373,10 +378,12 @@ int create_hosted_auction_file(User user, Auction auc)
     {
         return 0;
     }
+    */
 }
 
-int create_bidded_auction_file(User user, Auction auc)
+int create_bidded_auction_file(User user, AUCTIONINFO auc)
 {
+    /*
     char bidded_file_path[28];
     FILE *bidded_file;
     sprintf(bidded_file_path, "USERS/%s/BIDDED/%03d.txt", user.uid, auc.aid);
@@ -390,6 +397,7 @@ int create_bidded_auction_file(User user, Auction auc)
     {
         return 0;
     }
+    */
 }
 
 int create_auction_folder(int aid)
@@ -418,8 +426,9 @@ int create_auction_folder(int aid)
     }
 }
 
-int create_start_file(Auction auc, User user)
+int create_start_file(AUCTIONINFO auc, User user)
 {
+    /*
     char start_file_path[30];
     sprintf(start_file_path, "AUCTIONS/%03d/START_%03d.txt", auc.aid, auc.aid);
     FILE *start_file = fopen(start_file_path, "w");
@@ -436,6 +445,7 @@ int create_start_file(Auction auc, User user)
     {
         return 0;
     }
+    */
 }
 
 int create_asset_folder(int aid)
@@ -452,21 +462,22 @@ int create_asset_folder(int aid)
     }
 }
 
-int create_asset_file(Auction auc)
+int create_asset_file(AUCTIONINFO auc)
 {
     printf("...");
     return 0;
 }
 
-int create_end_file(Auction auc)
+int create_end_file(AUCTIONINFO auc)
 {
+    /*
     char end_file_path[26];
     sprintf(end_file_path, "AUCTIONS/%3d/END_%03d.txt", auc.aid, auc.aid);
     FILE *end_file = fopen(end_file_path, "w");
     if (end_file != NULL)
     {
         // Care n sei se as contas são assim
-        time_t end_time = auc.start_fulltime + auc.duration;
+        time_t end_time = auc.start_fulltime + auc.timeactive;
         struct tm *end_datetime = gmtime(&(end_time));
         fprintf(end_file, "%4d−%02d−%02d %02d:%02d:%02d\n%ld", end_datetime->tm_year + 1900, end_datetime->tm_mon + 1,
                 end_datetime->tm_mday, end_datetime->tm_hour, end_datetime->tm_min, end_datetime->tm_sec, (long)auc.duration);
@@ -477,6 +488,7 @@ int create_end_file(Auction auc)
     {
         return 0;
     }
+    */
 }
 
 int create_bids_folder(int aid)
@@ -493,8 +505,9 @@ int create_bids_folder(int aid)
     }
 }
 
-int create_bid_file(Auction auc, User user, int bid_value)
+int create_bid_file(AUCTIONINFO auc, User user, int bid_value)
 {
+    /*
     char bid_file_path[26];
     sprintf(bid_file_path, "AUCTIONS/%03d/%06d.txt", auc.aid, auc.start_value);
     FILE *bid_file = fopen(bid_file_path, "w");
@@ -515,10 +528,11 @@ int create_bid_file(Auction auc, User user, int bid_value)
     {
         return 0;
     }
+    */
 }
 
 // Check if user exists
-int check_user(char uid[])
+int LookUpUser(char uid[])
 {
     struct dirent **entrylist;
     char dirname[13];
@@ -547,7 +561,7 @@ int check_user(char uid[])
 }
 
 // Check password
-int check_user_password(char uid[], char pass[])
+int LookUpUserPassword(char uid[], char pass[])
 {
     char pass_file_path[34];
     FILE *pass_file;
@@ -570,7 +584,7 @@ int check_user_password(char uid[], char pass[])
 }
 
 // Check Logged in
-int check_user_logged_in(char uid[])
+int LookUpUserLogin(char uid[])
 {
     struct dirent **entrylist;
     char dirname[13];
@@ -600,7 +614,7 @@ int check_user_logged_in(char uid[])
 }
 
 // Checks if asset_file exists, if so returns the files size
-int check_asset_file(char *fname)
+int LookUpAssetFile(char *fname)
 {
     struct stat filestat;
 
@@ -612,6 +626,90 @@ int check_asset_file(char *fname)
     {
         return 0;
     }
+}
+
+int LookUpAuction(int aid, AUCTIONINFO *auc, BIDLIST *list)
+{
+    struct dirent **entrylist;
+    char dirname[15];
+    sprintf(dirname, "AUCTIONS/%03d", aid);
+    int n_entries = scandir(dirname, &entrylist, NULL, alphasort);
+    if (n_entries < 0)
+    {
+        perror("scandir"); // TODO RETIRAR OS PERRORS
+        return 0;
+    }
+    int auction_folder_found = 0; // QUANDO SE ENCONTRA O START FILE
+    char start_file[21];
+    char end_file[19];
+    sprintf(start_file, "START_%03d.txt", aid);
+    sprintf(end_file, "END_%03d.txt", aid);
+    while (n_entries--)
+    {
+        if (entrylist[n_entries]->d_type == DT_REG && strcmp(entrylist[n_entries]->d_name, start_file) == 0)
+        {
+            // READ START FILE
+            // TALVEZ METER ISTO NUMA FUNCAO
+            char start_file_path[30];
+            sprintf(start_file_path, "AUCTIONS/%03d/START_%03d.txt", aid, aid);
+            FILE *start_file = fopen(start_file_path, "r");
+            if (start_file != NULL)
+            {
+                if (fscanf(start_file, "%s %s %s %d %ld %4d−%02d−%02d %02d:%02d:%02d %ld",
+                           auc->uid, auc->name, auc->asset_fname, &auc->start_value, &auc->timeactive,
+                           &auc->start_datetime->tm_year, &auc->start_datetime->tm_mon, &auc->start_datetime->tm_mday,
+                           &auc->start_datetime->tm_hour, &auc->start_datetime->tm_min, &auc->start_datetime->tm_sec,
+                           &auc->timeactive) == 12)
+                {
+                    fclose(start_file);
+                    auction_folder_found = 1;
+                    free(entrylist[n_entries]); // Free memory for each entry
+                    break;
+                }
+                fclose(start_file);
+            }
+            free(entrylist[n_entries]); // Free memory for each entry
+        }
+        else if (entrylist[n_entries]->d_type == DT_REG && strcmp(entrylist[n_entries]->d_name, end_file) == 0)
+        {
+            // READ END FILE
+            // TALVEZ METER ISTO NUMA FUNCAO
+            char end_file_path[26];
+            sprintf(end_file_path, "AUCTIONS/%3d/END_%03d.txt", aid, aid);
+            FILE *end_file = fopen(end_file_path, "r");
+            if (end_file != NULL)
+            {
+                if (fscanf(end_file, "%4d−%02d−%02d %02d:%02d:%02d %ld",
+                           &auc->end_datetime->tm_year, &auc->end_datetime->tm_mon, &auc->end_datetime->tm_mday,
+                           &auc->end_datetime->tm_hour, &auc->end_datetime->tm_min, &auc->end_datetime->tm_sec,
+                           &auc->end_sec_time) == 7)
+                {
+                    fclose(end_file);
+                    free(entrylist[n_entries]); // Free memory for each entry
+                    break;
+                }
+                fclose(end_file);
+            }
+            free(entrylist[n_entries]); // Free memory for each entry
+        }
+        else if (entrylist[n_entries]->d_type == DT_DIR && strcmp(entrylist[n_entries]->d_name, "BIDS") == 0)
+        {
+            // READ BIDS FOLDER
+            // TALVEZ METER ISTO NUMA FUNCAO
+            char bids_folder_path[20];
+            sprintf(bids_folder_path, "AUCTIONS/%03d/BIDS", aid);
+            int no_bids = GetBidList(aid, &list);
+            if (no_bids == 0)
+            {
+                free(entrylist[n_entries]); // Free memory for each entry
+                break;
+            }
+            free(entrylist[n_entries]); // Free memory for each entry
+        }
+        free(entrylist[n_entries]); // Free memory for each entry
+    }
+    free(entrylist); // Free the entryList array
+    return auction_folder_found;
 }
 
 int GetHostedAuctionlist(char uid[], AUCTIONLIST *list)
@@ -645,6 +743,7 @@ int GetHostedAuctionlist(char uid[], AUCTIONLIST *list)
 
 int LoadAuction(const char *filepath, AUCTIONLIST *list)
 {
+    // TODO LOAD proper auction
     // Extract the AID from the filename
     char *token = strtok(filepath, ".");
     if (token != NULL)
@@ -762,7 +861,7 @@ int LoadBid(const char *filepath, BIDLIST *list)
                    &current_bid->bid_value,
                    &current_bid->bid_datetime->tm_year,
                    &current_bid->bid_datetime->tm_mon, &current_bid->bid_datetime->tm_mday, &current_bid->bid_datetime->tm_hour,
-                   &current_bid->bid_datetime->tm_min, &current_bid->bid_datetime->tm_sec, (long)&current_bid->bid_sec_time) == 9)
+                   &current_bid->bid_datetime->tm_min, &current_bid->bid_datetime->tm_sec, &current_bid->bid_sec_time) == 9)
         {
             list->no_bids++;
             fclose(file);
@@ -775,10 +874,55 @@ int LoadBid(const char *filepath, BIDLIST *list)
 
 void DisplayAuctions(AUCTIONLIST *list, char *response)
 {
+    // TODO VER SE TA ATIVO OU NAO
     for (int i = 0; i < list->no_aucs; ++i)
     {
         sprintf(response + strlen(response), " %03d 0", list->aucs[i]);
     }
+}
+
+char *DisplayRecord(AUCTIONINFO *auc, BIDLIST *list)
+{
+    // Calculate the size of the response string
+    // 6 = start_value, 5 = timeactive, 19 = start_date-time, 1 = '\0', 5 = spaces
+    int size = UID_SIZE + strlen(auc->name) + strlen(auc->asset_fname) + 6 + 5 + 19 + 1 + 5;
+    if (list->no_bids != 0)
+    {
+        // 3 = ' B ', 6 = bid_value, 19 = bid_date-time, 6 = bid_sec_time, 1 = '\0', 3 = spaces
+        size += list->no_bids * (3 + UID_SIZE + 6 + 19 + 6 + 1 + 3);
+    }
+    if (auc->end_sec_time == 0)
+    {
+        // 3 = ' E ', 19 = end_date-time, 6 = end_sec_time, 1 = '\0', 1 = spaces
+        size += list->no_bids * (3 + 19 + 6 + 1 + 1);
+    }
+
+    // Allocate memory for the response string
+    char *response = (char *)malloc(size * sizeof(char));
+
+    // Write the auction info to the response string
+    sprintf(response, "%s %s %s %d %ld %4d−%02d−%02d %02d:%02d:%02d %ld",
+            auc->uid, auc->name, auc->asset_fname, auc->start_value, auc->timeactive,
+            auc->start_datetime->tm_year, auc->start_datetime->tm_mon, auc->start_datetime->tm_mday,
+            auc->start_datetime->tm_hour, auc->start_datetime->tm_min, auc->start_datetime->tm_sec, auc->timeactive);
+
+    // Write the bid info to the response string
+    for (int i = 0; i < list->no_bids; ++i)
+    {
+        sprintf(response + strlen(response), " B %s %d %4d−%02d−%02d %02d:%02d:%02d %ld",
+                list->bids[i].UID, list->bids[i].bid_value,
+                list->bids[i].bid_datetime->tm_year, list->bids[i].bid_datetime->tm_mon, list->bids[i].bid_datetime->tm_mday,
+                list->bids[i].bid_datetime->tm_hour, list->bids[i].bid_datetime->tm_min, list->bids[i].bid_datetime->tm_sec,
+                list->bids[i].bid_sec_time);
+    }
+    // Here i can check if struct end_date_time is null instead
+    if (auc->end_sec_time == 0)
+    {
+        sprintf(response + strlen(response), " E %4d−%02d−%02d %02d:%02d:%02d %ld",
+                auc->end_datetime->tm_year, auc->end_datetime->tm_mon, auc->end_datetime->tm_mday,
+                auc->end_datetime->tm_hour, auc->end_datetime->tm_min, auc->end_datetime->tm_sec, auc->end_sec_time);
+    }
+    return response;
 }
 
 int check_auction_name(char auction_name[])

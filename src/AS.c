@@ -46,6 +46,12 @@ void udp_message_handle(ssize_t n, char buffer[])
                 break;
             }
         }
+        else
+        {
+            strcpy(reply_code, "ERR");
+            sprintf(reply, "%s\n", reply_code);
+            printf("Invalid credentials.\n");
+        }
     }
     else if (strcmp(code, "LOU") == 0) // Logout
     {
@@ -72,6 +78,12 @@ void udp_message_handle(ssize_t n, char buffer[])
                 break;
             }
         }
+        else
+        {
+            strcpy(reply_code, "ERR");
+            sprintf(reply, "%s\n", reply_code);
+            printf("Invalid credentials.\n");
+        }
     }
     else if (strcmp(code, "UNR") == 0) // Unregister
     {
@@ -97,6 +109,12 @@ void udp_message_handle(ssize_t n, char buffer[])
                 sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             }
+        }
+        else
+        {
+            strcpy(reply_code, "ERR");
+            sprintf(reply, "%s\n", reply_code);
+            printf("Invalid credentials.\n");
         }
     }
     else if (strcmp(code, "LMA") == 0) // MyActions
@@ -125,11 +143,17 @@ void udp_message_handle(ssize_t n, char buffer[])
                 DisplayAuctions(&list, response);
                 strcpy(status, "OK");
                 reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 3) * sizeof(char));
-                sprintf(reply, "%s %s%s\n", reply_code, status, response);
+                sprintf(reply, "%s %s %s\n", reply_code, status, response);
                 free(response);
                 break;
             }
             }
+        }
+        else
+        {
+            strcpy(reply_code, "ERR");
+            sprintf(reply, "%s\n", reply_code);
+            printf("Invalid credentials.\n");
         }
     }
     else if (strcmp(code, "LMB") == 0) // MyBids
@@ -158,14 +182,19 @@ void udp_message_handle(ssize_t n, char buffer[])
                 DisplayAuctions(&list, response);
                 strcpy(status, "OK");
                 reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 3) * sizeof(char));
-                sprintf(reply, "%s %s%s\n", reply_code, status, response);
+                sprintf(reply, "%s %s %s\n", reply_code, status, response);
                 free(response);
                 break;
             }
             }
         }
+        else
+        {
+            strcpy(reply_code, "ERR");
+            sprintf(reply, "%s\n", reply_code);
+            printf("Invalid credentials.\n");
+        }
     }
-    /*
     else if (strcmp(code, "LST") == 0) // List
     {
         strcpy(reply_code, "RLS");
@@ -183,24 +212,25 @@ void udp_message_handle(ssize_t n, char buffer[])
             char *response = (char *)malloc((list.no_aucs * 6 + 1) * sizeof(char));
             DisplayAuctions(&list, response);
             strcpy(status, "OK");
-            reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 3) * sizeof(char));
-            sprintf(reply, "%s %s%s\n", reply_code, status, response);
+            reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 4) * sizeof(char));
+            sprintf(reply, "%s %s %s\n", reply_code, status, response);
             free(response);
             break;
         }
         }
     }
-    */
     else if (strcmp(code, "SRC") == 0) // Show_record
     {
-        char aid[AID_SIZE];
-        sscanf(buffer, "%*s %s", aid);
+        char aid_s[AID_SIZE];
+        sscanf(buffer, "%*s %s", aid_s);
         strcpy(reply_code, "RUR");
-        if (verify_AID(aid))
+        if (verify_AID(aid_s))
         {
-            /*
+            int aid = atoi(aid_s);
+            AUCTIONINFO info;
+            BIDLIST list;
             char status[4];
-            int result = unregister_user(uid, pass);
+            int result = show_record_user(aid, &info, &list);
             switch (result)
             {
             case 0:
@@ -208,15 +238,21 @@ void udp_message_handle(ssize_t n, char buffer[])
                 sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             case 1:
+            {
                 strcpy(status, "OK");
-                sprintf(reply, "%s %s\n", reply_code, status);
-                break;
-            case 2:
-                strcpy(status, "UNR");
-                sprintf(reply, "%s %s\n", reply_code, status);
+                char *response = DisplayRecord(&info, &list);
+                reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 4) * sizeof(char));
+                sprintf(reply, "%s %s %s\n", reply_code, status, response);
+                free(response);
                 break;
             }
-            */
+            }
+        }
+        else
+        {
+            strcpy(reply_code, "ERR");
+            sprintf(reply, "%s\n", reply_code);
+            printf("Invalid credentials.\n");
         }
     }
     else
