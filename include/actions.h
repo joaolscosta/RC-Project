@@ -21,21 +21,30 @@
 #define UID_SIZE 7
 #define AID_SIZE 4
 #define PASS_SIZE 9
+#define AUCTION_NAME_SIZE 11
+#define FILE_NAME_SIZE 25 // 24 + /0
+#define BID_VALUE_SIZE 7  // 6 + /0
 
-typedef struct User
+typedef struct USERINFO
 {
     char uid[UID_SIZE];
     char password[PASS_SIZE];
-} User;
+} USERINFO;
+
+typedef struct FILEINFO
+{
+    char file_name[FILE_NAME_SIZE];
+    int file_size;
+} FILEINFO;
 
 typedef struct AUCTIONINFO
 {
     // START
-    char uid[UID_SIZE];    // owner
-    char name[11];         // Define 11
-    char asset_fname[255]; // Define 255 TODO MUDAR DPS
-    int start_value;       // Up to 6 digits
-    time_t timeactive;     // represented up to 5 digits
+    char uid[UID_SIZE];               // owner
+    char name[AUCTION_NAME_SIZE];     // Define 11
+    char asset_fname[FILE_NAME_SIZE]; // Define 255 TODO MUDAR DPS
+    int start_value;                  // Up to 6 digits
+    time_t timeactive;                // represented up to 5 digits
     struct tm *start_datetime;
     // END
     struct tm *end_datetime;
@@ -76,12 +85,10 @@ int mybids_user(char uid[], AUCTIONLIST *list);
 int list_all_auctions(AUCTIONLIST *list);
 int show_record_user(int aid, AUCTIONINFO *auc, BIDLIST *list);
 //  TCP
-/*
-int open(char buffer[]);
-int close(char buffer[]);
-int show_asset(char buffer[]);
-int bid(char buffer[]);
-*/
+int open_auction(AUCTIONINFO info, FILEINFO file, char *file_data, int *aid);
+int close_auction(USERINFO info, int aid);
+int show_asset(int aid, FILEINFO *file, char *file_data);
+int bid(USERINFO info, int aid, int bid_value);
 // LOCAL
 // int exit(char buffer[]);
 // Server
@@ -92,16 +99,16 @@ int create_login_file(char uid[]);
 int delete_login_file(char uid[]);
 int create_hosted_folder(char uid[]);
 int create_bidded_folder(char uid[]);
-int create_hosted_auction_file(User user, AUCTIONINFO auc);
-int create_bidded_auction_file(User user, AUCTIONINFO auc);
+int create_hosted_auction_file(USERINFO user, AUCTIONINFO auc);
+int create_bidded_auction_file(USERINFO user, AUCTIONINFO auc);
 //   Auctions
 int create_auction_folder(int aid);
-int create_start_file(AUCTIONINFO auc, User user);
+int create_start_file(AUCTIONINFO auc, USERINFO user);
 int create_asset_folder(int aid);
 int create_asset(AUCTIONINFO auc);
 int create_end_file(AUCTIONINFO auc);
 int create_bids_folder(int aid);
-int create_bid_file(AUCTIONINFO auc, User user, int bid_value);
+int create_bid_file(AUCTIONINFO auc, USERINFO user, int bid_value);
 // LookUps
 int LookUpUser(char uid[]);
 int LookUpUserPassword(char uid[], char pass[]);

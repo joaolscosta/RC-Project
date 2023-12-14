@@ -223,6 +223,34 @@ int show_record_user(int aid, AUCTIONINFO *auc_info, BIDLIST *bid_list)
     }
 }
 
+int open_auction(AUCTIONINFO info, FILEINFO file, char *file_data, int *aid)
+{
+    // Check if user is logged in
+    if (!LookUpUserLogin(info.uid))
+    {
+        // STATUS NLG
+        return 2;
+    }
+    // Create Auction Folder
+    // STATUS OK
+    return 1;
+}
+
+int close_auction(USERINFO info, int aid)
+{
+    return 1;
+}
+
+int show_asset(int aid, FILEINFO *file, char *file_data)
+{
+    return 1;
+}
+
+int bid(USERINFO info, int aid, int bid_value)
+{
+    return 1;
+}
+
 // Register User
 int create_user_folder(char uid[], char pass[])
 {
@@ -362,7 +390,7 @@ int create_bidded_folder(char uid[])
     }
 }
 
-int create_hosted_auction_file(User user, AUCTIONINFO auc)
+int create_hosted_auction_file(USERINFO user, AUCTIONINFO auc)
 {
     /*
     char hosted_file_path[28];
@@ -381,7 +409,7 @@ int create_hosted_auction_file(User user, AUCTIONINFO auc)
     */
 }
 
-int create_bidded_auction_file(User user, AUCTIONINFO auc)
+int create_bidded_auction_file(USERINFO user, AUCTIONINFO auc)
 {
     /*
     char bidded_file_path[28];
@@ -426,7 +454,7 @@ int create_auction_folder(int aid)
     }
 }
 
-int create_start_file(AUCTIONINFO auc, User user)
+int create_start_file(AUCTIONINFO auc, USERINFO user)
 {
     /*
     char start_file_path[30];
@@ -505,7 +533,7 @@ int create_bids_folder(int aid)
     }
 }
 
-int create_bid_file(AUCTIONINFO auc, User user, int bid_value)
+int create_bid_file(AUCTIONINFO auc, USERINFO user, int bid_value)
 {
     /*
     char bid_file_path[26];
@@ -1061,4 +1089,9 @@ int check_open_credentials(char auction_name[], char file_name[], int start_valu
     check = check_time_active_input(time_active);
 
     return check;
+}
+
+int verify_bid_value(char bid_value[])
+{
+    return 1;
 }

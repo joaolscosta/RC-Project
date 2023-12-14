@@ -14,6 +14,7 @@ char buffer[128];
 char *ASport = DEFAULT_PORT; // Chanhge to GROUO PORT
 int verbose = 0;
 
+// TODO ACHO Q N PRECISO DE PASSAR ESTES ARGS MAS YAH
 void udp_message_handle(ssize_t n, char buffer[])
 {
     char *reply = (char *)malloc(9 * sizeof(char));
@@ -239,6 +240,8 @@ void udp_message_handle(ssize_t n, char buffer[])
                 break;
             case 1:
             {
+                // TODO Dar display aos uids com 0S atras para preencher o seu tamanho de 6
+                // Acho eu q é preciso not sure
                 strcpy(status, "OK");
                 char *response = DisplayRecord(&info, &list);
                 reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 4) * sizeof(char));
@@ -270,6 +273,166 @@ void udp_message_handle(ssize_t n, char buffer[])
         exit(1);
     }
     free(reply);
+}
+
+// TODO ACHO Q N PRECISO DE PASSAR ESTES ARGS MAS YAH
+void tcp_message_handle(ssize_t n, char buffer[])
+{
+    char *reply = (char *)malloc(9 * sizeof(char));
+    char code[4];
+    char reply_code[4];
+    sscanf(buffer, "%s ", code);  // TODO VERIFICAR SE TOU A RECEBER A MSG COM \n NO FIM !!!
+    if (strcmp(code, "OPA") == 0) // Open
+    {
+        char uid[UID_SIZE], pass[PASS_SIZE];
+        char auction_name[AUCTION_NAME_SIZE], start_value[7], time_active[6];
+        char file_name[FILE_NAME_SIZE], file_size[9];
+        char *file_data = (char *)malloc(1000000 * sizeof(char)); // TODO MUDAR ISTO PARA O TAMANHO DO FICHEIRO COM FILE_SIZE
+        sscanf(buffer, "%*s %s %s %s %s %s %s %s %s", uid, pass, auction_name, start_value, time_active, file_name, file_size, file_data);
+        strcpy(reply_code, "ROA");
+        if (check_open_credentials(auction_name, file_name, start_value, time_active))
+        {
+            char status[4];
+            AUCTIONINFO info;
+            FILEINFO file;
+            info.start_value = atoi(start_value);
+            info.timeactive = atoi(time_active);
+            file.file_size = atoi(file_size);
+            strcpy(info.uid, uid);
+            strcpy(info.asset_fname, file_name);
+            strcpy(file.file_name, file_name);
+            strcpy(info.name, auction_name);
+            int aid;
+            int result = open_auction(info, file, file_data, &aid);
+            switch (result)
+            {
+            case 0:
+                strcpy(status, "NOK");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            case 1:
+                strcpy(status, "OK");
+                sprintf(reply, "%s %s %03d\n", reply_code, status, aid);
+                break;
+            case 2:
+                strcpy(status, "NLG");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            }
+        }
+        else
+        {
+            strcpy(reply_code, "ERR");
+            sprintf(reply, "%s\n", reply_code);
+            printf("Invalid credentials.\n");
+        }
+    }
+    else if (strcmp(code, "CLS") == 0) // Close
+    {
+        char uid[UID_SIZE], pass[PASS_SIZE], aid_s[AID_SIZE];
+        sscanf(buffer, "%*s %s %s %s", uid, pass, aid_s);
+        strcpy(reply_code, "RCL");
+        if (verify_user_credentials(uid, pass) && verify_AID(aid_s))
+        {
+            char status[4];
+            int aid = atoi(aid_s);
+            USERINFO info;
+            strcpy(info.uid, uid);
+            strcpy(info.password, pass);
+            int result = close_auction(info, aid);
+            switch (result)
+            {
+            case 0:
+                strcpy(status, "NOK");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            case 1:
+                strcpy(status, "OK");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            }
+        }
+        else
+        {
+            strcpy(reply_code, "ERR");
+            sprintf(reply, "%s\n", reply_code);
+            printf("Invalid credentials.\n");
+        }
+    }
+    else if (strcmp(code, "SAS") == 0) // Show_asset
+    {
+        char aid_s[AID_SIZE];
+        sscanf(buffer, "%*s %s", aid_s);
+        strcpy(reply_code, "RSA");
+        if (verify_AID(aid_s))
+        {
+            FILEINFO info;
+            char *file_data = (char *)malloc(1000000 * sizeof(char)); // TODO MUDAR ISTO PARA O TAMANHO DO FICHEIRO COM FILE_SIZE
+            char status[4];
+            int aid = atoi(aid_s);
+            int result = show_asset(aid, &info, file_data);
+            switch (result)
+            {
+            case 0:
+                strcpy(status, "NOK");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            case 1:
+                strcpy(status, "OK");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            }
+        }
+        else
+        {
+            strcpy(reply_code, "ERR");
+            sprintf(reply, "%s\n", reply_code);
+            printf("Invalid credentials.\n");
+        }
+    }
+    else if (strcmp(code, "BID") == 0) // Bid
+    {
+        char uid[UID_SIZE], pass[PASS_SIZE], aid_s[AID_SIZE], bid_value_s[BID_VALUE_SIZE];
+        sscanf(buffer, "%*s %s %s %s %s ", uid, pass, aid_s, bid_value_s);
+        strcpy(reply_code, "RBD");
+        if (verify_user_credentials(uid, pass) && verify_AID(aid_s) && verify_bid_value(bid_value_s))
+        {
+            char status[4];
+            USERINFO info;
+            strcpy(info.uid, uid);
+            strcpy(info.password, pass);
+            int aid = atoi(aid_s);
+            int bid_value = atoi(bid_value_s);
+            int result = bid(info, aid, bid_value);
+            switch (result)
+            {
+            case 0:
+                strcpy(status, "NOK");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            case 1:
+                strcpy(status, "OK");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            case 2:
+                strcpy(status, "ERR");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            }
+        }
+        else
+        {
+            strcpy(reply_code, "ERR");
+            sprintf(reply, "%s\n", reply_code);
+            printf("Invalid credentials.\n");
+        }
+    }
+    else
+    {
+        strcpy(reply_code, "ERR");
+        sprintf(reply, "%s\n", reply_code);
+        printf("Invalid handle input.\n");
+    }
 }
 
 void server()
