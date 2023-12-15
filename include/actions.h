@@ -66,8 +66,8 @@ int verify_AID(char aid[]);
 int calculate_str_length(char buffer[]);
 // UDP
 int login_user(char uid[], char pass[]);
-int logout_user(char uid[], char pass[]);
-int unregister_user(char uid[], char pass[]);
+int logout_user(char uid[]);
+int unregister_user(char uid[]);
 int myauctions_user(char uid[], AUCTIONLIST *list);
 int mybids_user(char uid[], AUCTIONLIST *list);
 int list_all_auctions(AUCTIONLIST *list);
@@ -84,10 +84,10 @@ int bid(char buffer[]);
 // Server
 //  Users
 int create_user_folder(char uid[], char pass[]);
-int remove_user_folder(char uid[], char pass[]);
 int create_pass_file(char uid[], char pass[]);
 int create_login_file(char uid[]);
 int delete_login_file(char uid[]);
+int delete_pass_file(char uid[]);
 int create_hosted_folder(char uid[]);
 int create_bidded_folder(char uid[]);
 int create_hosted_auction_file(User user, Auction auc);
@@ -115,10 +115,12 @@ int LoadBid(const char *filepath, BIDLIST *list);
 void DisplayAuctions(AUCTIONLIST *list, char *response);
 int check_auction_name(char auction_name[]);
 int check_file_name(char file_name[]);
-long int get_file_size(char file_name[]);
-int check_start_value(int start_value);
-int check_time_active_input(int time_active);
-int check_open_credentials(char auction_name[], char file_name[], int start_value, int time_active);
+char *read_file_data(char file_name[]);
+int get_file_size(char file_name[]);
+int check_start_value(char start_value[]);
+int check_time_active_input(char time_active[]);
+int check_open_credentials(char auction_name[], char file_name[], char start_value[], char time_active[]);
+int verify_file_name(char file_name[]);
 
 /**/
 #endif

@@ -55,7 +55,7 @@ void udp_message_handle(ssize_t n, char buffer[])
         if (verify_user_credentials(uid, pass))
         {
             char status[4];
-            int result = logout_user(uid, pass);
+            int result = logout_user(uid);
             switch (result)
             {
             case 0:
@@ -81,7 +81,7 @@ void udp_message_handle(ssize_t n, char buffer[])
         if (verify_user_credentials(uid, pass))
         {
             char status[4];
-            int result = unregister_user(uid, pass);
+            int result = unregister_user(uid);
             switch (result)
             {
             case 0:

@@ -20,9 +20,6 @@
 
 ## Ideias:
 
-- As funções do actions estão todas super semelhantes faz questionar o pq de ter tanta função diferente que faz o msm. Talvez tornar mais modular
-  (Men então não é que eu fiz as funções de verificação e depois estava a verificar as verificações AHAHAHAH já meti aquilo como queria thanks)
-
 -
 
 ## Dúvidas:
@@ -33,6 +30,6 @@
 
 - Q caralhos acontece se o user connectar se a orts ou ips errados etc..
 
-# Stresses
+- (JC) É suposto quando damos myauctions ou mybids ou list apresentar ao user a lista tal como o server envia?
 
-- Cada vez que dou login a um utilizador, se quiser dar login a outro não aparece
+# Stresses

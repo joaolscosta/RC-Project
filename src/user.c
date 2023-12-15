@@ -20,7 +20,7 @@ struct addrinfo hints, *res;
 struct sockaddr_in addr;
 char buffer[128]; // buffer para onde serão escritos os dados recebidos do servidor
 
-char tcp_input[][11] = {"open", "close", "show_asset", "bid", "b"};
+char tcp_input[][11] = {"open", "close", "show_asset", "sa", "bid", "b"};
 
 char *ASIP = IP;
 char *ASport = DEFAULT_PORT;
@@ -28,7 +28,7 @@ char *ASport = DEFAULT_PORT;
 char current_login_uid[7];
 char current_login_pass[9];
 
-void udp_message_handle(ssize_t n, char buffer[])
+void udp_message_handle(ssize_t n, char buffer[], size_t buffer_size)
 {
     char code[4];
     char status[4];
@@ -39,11 +39,11 @@ void udp_message_handle(ssize_t n, char buffer[])
     {
         if (strcmp(status, "OK") == 0)
         {
-            printf("User logged in successfully.\n");
+            printf("Successful login.\n");
         }
         else if (strcmp(status, "NOK") == 0)
         {
-            printf("Credentials invalid.\n");
+            printf("Incorrect login attempt. Credentials may be invalid.\n");
         }
         else if (strcmp(status, "REG") == 0)
         {
@@ -56,15 +56,16 @@ void udp_message_handle(ssize_t n, char buffer[])
     }
     else if (strcmp(code, "RLO") == 0) // Reposta de Logout
     {
+
         if (strcmp(status, "OK") == 0)
         {
             strcpy(current_login_uid, "no");
-            strcpy(current_login_uid, "no");
-            printf("User loggout successfully.\n");
+            strcpy(current_login_pass, "no");
+            printf("Successfull logout.\n");
         }
         else if (strcmp(status, "NOK") == 0)
         {
-            printf("Impossible to loggout user.\n");
+            printf("Can't logout user. User not logged in.\n");
         }
         else if (strcmp(status, "UNR") == 0)
         {
@@ -81,11 +82,11 @@ void udp_message_handle(ssize_t n, char buffer[])
         {
             strcpy(current_login_uid, "no");
             strcpy(current_login_uid, "no");
-            printf("User unregisted successfully.\n");
+            printf("Successful unregister.\n");
         }
         else if (strcmp(status, "NOK") == 0)
         {
-            printf("Can't unregisterer user.\n");
+            printf("Can't unregisterer user. User not logged in.\n");
         }
         else if (strcmp(status, "UNR") == 0)
         {
@@ -104,9 +105,15 @@ void udp_message_handle(ssize_t n, char buffer[])
         }
         else if (strcmp(status, "OK") == 0)
         {
-            printf("User Actions:\n");
-            write(1, buffer, n);
-            memset(buffer, 0, sizeof(buffer));
+            // char list[8192];
+            // sscanf(buffer, "%*s %*s %[^\n]", list);
+            // printf("%s\n", list);
+            printf("%s\n", buffer);
+            memset(buffer, 0, buffer_size);
+        }
+        else if (strcmp(status, "NLG") == 0)
+        {
+            printf("User not logged in.\n");
         }
         else
         {
@@ -121,9 +128,12 @@ void udp_message_handle(ssize_t n, char buffer[])
         }
         else if (strcmp(status, "OK") == 0)
         {
-            printf("User Bids:\n");
             write(1, buffer, n);
-            memset(buffer, 0, sizeof(buffer));
+            memset(buffer, 0, buffer_size);
+        }
+        else if (strcmp(status, "NLG") == 0)
+        {
+            printf("User not logged in.\n");
         }
         else
         {
@@ -140,7 +150,7 @@ void udp_message_handle(ssize_t n, char buffer[])
         {
             printf("All actions list:\n");
             write(1, buffer, n);
-            memset(buffer, 0, sizeof(buffer));
+            memset(buffer, 0, buffer_size);
         }
         else
         {
@@ -157,7 +167,7 @@ void udp_message_handle(ssize_t n, char buffer[])
         {
             printf("Record:\n");
             write(1, buffer, n);
-            memset(buffer, 0, sizeof(buffer));
+            memset(buffer, 0, buffer_size);
         }
         else
         {
@@ -170,8 +180,9 @@ void udp_message_handle(ssize_t n, char buffer[])
     }
 }
 
-void udp_message(char buffer[])
+void udp_message(char buffer[], size_t buffer_size)
 {
+
     fd = socket(AF_INET, SOCK_DGRAM, 0);
 
     if (fd == -1)
@@ -196,7 +207,7 @@ void udp_message(char buffer[])
         exit(EXIT_FAILURE);
     }
 
-    memset(buffer, 0, sizeof(buffer));
+    memset(buffer, 0, buffer_size);
     addrlen = sizeof(addr);
     char recv_buffer[8192];
     n = recvfrom(fd, recv_buffer, 8192, 0, (struct sockaddr *)&addr, &addrlen);
@@ -206,14 +217,15 @@ void udp_message(char buffer[])
         exit(EXIT_FAILURE);
     }
 
-    udp_message_handle(n, recv_buffer);
+    size_t receive_buffer_size = sizeof(recv_buffer) / sizeof(recv_buffer[0]);
+    udp_message_handle(n, recv_buffer, receive_buffer_size);
 
-    memset(recv_buffer, 0, sizeof(recv_buffer));
+    memset(recv_buffer, 0, receive_buffer_size);
     freeaddrinfo(res);
     close(fd);
 }
 
-void udp(char buffer[])
+void udp(char buffer[], size_t size)
 {
     char command[33];
     char reply[33];
@@ -228,13 +240,22 @@ void udp(char buffer[])
         {
             strcpy(current_login_uid, uid);
             strcpy(current_login_pass, pass);
-            udp_message(reply);
+            size_t buffer_size = sizeof(reply) / sizeof(reply[0]);
+            udp_message(reply, buffer_size);
         }
     }
     else if (strcmp(command, "logout") == 0)
     {
-        sprintf(reply, "LOU %s %s\n", current_login_uid, current_login_pass);
-        udp_message(reply);
+        if (strcmp("no", current_login_uid) == 0)
+        {
+            printf("User not logged in.\n");
+        }
+        else
+        {
+            sprintf(reply, "LOU %s %s\n", current_login_uid, current_login_pass);
+            size_t buffer_size = sizeof(reply) / sizeof(reply[0]);
+            udp_message(reply, buffer_size);
+        }
     }
     else if (strcmp(command, "unregister") == 0)
     {
@@ -245,7 +266,8 @@ void udp(char buffer[])
         else
         {
             sprintf(reply, "UNR %s %s\n", current_login_uid, current_login_pass);
-            udp_message(reply);
+            size_t buffer_size = sizeof(reply) / sizeof(reply[0]);
+            udp_message(reply, buffer_size);
         }
     }
     else if ((strcmp(command, "myauctions") == 0) || (strcmp(command, "ma") == 0))
@@ -257,7 +279,8 @@ void udp(char buffer[])
         else
         {
             sprintf(reply, "LMA %s\n", current_login_uid);
-            udp_message(reply);
+            size_t buffer_size = sizeof(reply) / sizeof(reply[0]);
+            udp_message(reply, buffer_size);
         }
     }
     else if ((strcmp(command, "mybids") == 0) || (strcmp(command, "mb") == 0))
@@ -269,13 +292,15 @@ void udp(char buffer[])
         else
         {
             sprintf(reply, "LMB %s\n", current_login_uid);
-            udp_message(reply);
+            size_t buffer_size = sizeof(reply) / sizeof(reply[0]);
+            udp_message(reply, buffer_size);
         }
     }
     else if ((strcmp(command, "list") == 0) || (strcmp(command, "l") == 0))
     {
         sprintf(reply, "LST\n");
-        udp_message(reply);
+        size_t buffer_size = sizeof(reply) / sizeof(reply[0]);
+        udp_message(reply, buffer_size);
     }
     else if ((strcmp(command, "show_record") == 0) || (strcmp(command, "sr") == 0))
     {
@@ -290,22 +315,30 @@ void udp(char buffer[])
             sprintf(reply, "SRC %s\n", aid);
             if (verify_AID(aid))
             {
-                udp_message(reply);
+                size_t buffer_size = sizeof(reply) / sizeof(reply[0]);
+                udp_message(reply, buffer_size);
             }
         }
     }
     else if (strcmp(command, "exit") == 0)
     {
-        exit(1);
+        if (strcmp("no", current_login_uid) == 0)
+        {
+            exit(0);
+        }
+        else
+        {
+            printf("User still logged in.\n");
+        }
     }
     else
     {
         printf("Invalid input: %s\n", command);
     }
-    memset(buffer, 0, sizeof(buffer));
+    memset(buffer, 0, size);
 }
 
-void tcp_message_handle(ssize_t n, char buffer[])
+void tcp_message_handle(char buffer[], size_t buffer_size)
 {
     char message_received[30];
     char status[30];
@@ -316,7 +349,10 @@ void tcp_message_handle(ssize_t n, char buffer[])
     {
         if (strcmp(status, "OK") == 0)
         {
-            printf("AID: A_FAZER\n");
+            char new_aid[4];
+            sscanf(buffer, "%*s %*s %s", new_aid);
+            printf("Auction opened with AID: %s\n", new_aid);
+            memset(buffer, 0, buffer_size);
         }
         else if (strcmp(status, "NOK") == 0)
         {
@@ -362,7 +398,48 @@ void tcp_message_handle(ssize_t n, char buffer[])
     {
         if (strcmp(status, "OK") == 0)
         {
-            printf("ENVIAR FILE.\n");
+            char file_name[33], file_data[8192], file_size[8192];
+
+            sscanf(buffer, "%*s %*s %s %s %*s", file_name, file_size);
+
+            int count_spaces = 0;
+            int start_file_data_position = 0;
+            for (size_t i = 0; i < strlen(buffer); i++)
+            {
+                if (buffer[i] == ' ')
+                {
+                    count_spaces++;
+                }
+                if (count_spaces == 4)
+                {
+                    start_file_data_position = i + 1;
+                    break;
+                }
+            }
+
+            file_data[0] = '\0';
+            for (size_t i = start_file_data_position; i < strlen(buffer); i++)
+            {
+                // Create a temporary string to hold the current character and a null terminator
+                char temp[2] = {buffer[i], '\0'};
+
+                strcat(file_data, temp);
+            }
+
+            FILE *file = fopen(file_name, "w");
+            if (file == NULL)
+            {
+                printf("Failed to open file: %s\n", file_name);
+            }
+            else
+            {
+                fprintf(file, "%s", file_data);
+
+                printf("File %s received with size %s bytes.\n", file_name, file_size);
+
+                fclose(file);
+                memset(buffer, 0, buffer_size);
+            }
         }
         else if (strcmp(status, "NOK") == 0)
         {
@@ -402,14 +479,12 @@ void tcp_message_handle(ssize_t n, char buffer[])
     }
 }
 
-void tcp_message(char buffer[])
+void tcp_message(char buffer[], size_t size)
 {
     int fd, errcode;
     ssize_t n;
-    socklen_t addrlen;
     struct addrinfo hints, *res;
-    struct sockaddr_in addr;
-    char receive_buffer[1024];
+    char receive_buffer[8192];
 
     fd = socket(AF_INET, SOCK_STREAM, 0);
     if (fd == -1)
@@ -438,29 +513,30 @@ void tcp_message(char buffer[])
         perror("write");
         exit(1);
     }
-
-    n = read(fd, receive_buffer, sizeof(receive_buffer) - 1);
-    if (n == -1)
+    char aux[8192];
+    memset(aux, 0, sizeof(aux));
+    while ((n = read(fd, aux, sizeof(aux) - 1)) > 0)
     {
-        perror("read");
-        exit(1);
+        strcat(receive_buffer, aux);
     }
 
-    receive_buffer[n] = '\0';
+    memset(buffer, 0, size);
 
-    tcp_message_handle(n, receive_buffer);
+    size_t buffer_size = sizeof(receive_buffer) / sizeof(receive_buffer[0]);
+    tcp_message_handle(receive_buffer, buffer_size);
+
+    memset(receive_buffer, 0, sizeof(receive_buffer));
 
     freeaddrinfo(res);
     close(fd);
 }
 
-void tcp(char buffer[])
+void tcp(char buffer[], size_t size)
 {
 
     char command[33];
     char reply[50];
     sscanf(buffer, "%s", command);
-
     if (strcmp(command, "open") == 0) // Open auction
     {
         if (strcmp("no", current_login_uid) == 0)
@@ -470,16 +546,16 @@ void tcp(char buffer[])
         else
         {
             char auction_name[33], file_name[33], file_data[8192];
-            char start_value, time_active;
-            char file_size;
-
-            sscanf(buffer, "open %s %s %d %d", auction_name, file_name, start_value, time_active);
+            char start_value[8192], time_active[8192];
+            long int file_size;
+            sscanf(buffer, "open %s %s %s %s", auction_name, file_name, start_value, time_active);
             if (check_open_credentials(auction_name, file_name, start_value, time_active))
             {
                 strcpy(file_data, read_file_data(file_name));
                 file_size = get_file_size(file_name);
-                sprintf(reply, "LIN %s %s %s %s %s %s %s %s\n", current_login_uid, current_login_pass, auction_name, start_value, time_active, file_name, file_size, file_data);
-                tcp_message(reply);
+                sprintf(reply, "OPA %s %s %s %s %s %s %ld %s\n", current_login_uid, current_login_pass, auction_name, start_value, time_active, file_name, (char)file_size, file_data);
+                size_t buffer_size = sizeof(reply) / sizeof(reply[0]);
+                tcp_message(reply, buffer_size);
             }
         }
     }
@@ -489,23 +565,34 @@ void tcp(char buffer[])
         {
             printf("User not logged in.\n");
         }
-        else //! Temos que verificar que só se pode fechar auctions do próprio user logado
+        else
         {
             char aid[4];
             sscanf(buffer, "close %s", aid);
             sprintf(reply, "CLS %s %s %s\n", current_login_uid, current_login_pass, aid);
-            tcp_message(reply);
+            size_t buffer_size = sizeof(reply) / sizeof(reply[0]);
+            tcp_message(reply, buffer_size);
         }
     }
     else if ((strcmp(command, "show_asset") == 0) || (strcmp(command, "sa") == 0))
     {
         char aid[4];
-        sscanf(buffer, "show_asset %s", aid);
-        sprintf(reply, "SAS %s\n", aid);
-
-        tcp_message(reply);
+        sscanf(buffer, "%*s %s", aid);
+        if (strlen(aid) != 3)
+        {
+            printf("Invalid input: aid size wrong.\n");
+        }
+        else
+        {
+            sprintf(reply, "SAS %s\n", aid);
+            if (verify_AID(aid))
+            {
+                size_t buffer_size = sizeof(reply) / sizeof(reply[0]);
+                tcp_message(reply, buffer_size);
+            }
+        }
     }
-    else if ((strcmp(command, "bid") == 0) || (strcmp(command, "b") == 0)) //! Temos que verificar que só se pode fechar auctions do próprio user logado
+    else if ((strcmp(command, "bid") == 0) || (strcmp(command, "b") == 0))
     {
         if (strcmp("no", current_login_uid) == 0)
         {
@@ -517,7 +604,8 @@ void tcp(char buffer[])
             char bid_value[10];
             sscanf(buffer, "%*s %s %s", aid, bid_value);
             sprintf(reply, "BID %s %s %s %s\n", current_login_uid, current_login_pass, aid, bid_value);
-            tcp_message(reply);
+            size_t buffer_size = sizeof(reply) / sizeof(reply[0]);
+            tcp_message(reply, buffer_size);
         }
     }
     else
@@ -602,11 +690,11 @@ int main(int argc, char const *argv[])
 
             if (check_if_tcp(buffer))
             {
-                tcp(buffer);
+                tcp(buffer, sizeof(buffer));
             }
             else
             {
-                udp(buffer);
+                udp(buffer, sizeof(buffer));
             }
         }
     }

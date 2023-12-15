@@ -2,14 +2,14 @@
 
 int verify_UID(char uid[])
 {
-
     int uid_length = calculate_str_length(uid);
     if ((uid_length - 6) != 0)
     {
         printf("Invalid input: uid size wrong.\n");
         return 0;
     }
-    for (int i = 0; i < strlen(uid); i++)
+    size_t i;
+    for (i = 0; i < strlen(uid); i++)
     {
         if (!isdigit(uid[i]))
         {
@@ -32,7 +32,8 @@ int verify_user_credentials(char uid[], char pass[])
         printf("Invalid input: password size wrong\n");
         return 0;
     }
-    for (int i = 0; i < strlen(pass); i++)
+    size_t i;
+    for (i = 0; i < strlen(pass); i++)
     {
         if (!isdigit(pass[i]) && !isalpha(pass[i]))
         {
@@ -46,7 +47,8 @@ int verify_user_credentials(char uid[], char pass[])
 
 int verify_AID(char aid[])
 {
-    for (int i = 0; i < strlen(aid); i++)
+    size_t i;
+    for (i = 0; i < strlen(aid); i++)
     {
         if (!isdigit(aid[i]))
         {
@@ -123,7 +125,7 @@ int login_user(char uid[], char pass[])
     }
 }
 
-int logout_user(char uid[], char pass[])
+int logout_user(char uid[])
 {
     // Check if is already registered
     if (check_user(uid))
@@ -144,7 +146,7 @@ int logout_user(char uid[], char pass[])
     }
 }
 
-int unregister_user(char uid[], char pass[])
+int unregister_user(char uid[])
 {
     // Check if is already registered
     if (check_user(uid))
@@ -173,7 +175,7 @@ int myauctions_user(char uid[], AUCTIONLIST *list)
         // STATUS NLG
         return 2;
     }
-    int no_aucs = GetHostedAuctionlist(uid, &list);
+    int no_aucs = GetHostedAuctionlist(uid, list);
     if (no_aucs == 0)
     {
         // STATUS NOK
@@ -189,7 +191,7 @@ int mybids_user(char uid[], AUCTIONLIST *list)
         // STATUS NLG
         return 2;
     }
-    int no_aucs = GetBiddedAuctionlist(uid, &list);
+    int no_aucs = GetBiddedAuctionlist(uid, list);
     if (no_aucs == 0)
     {
         // STATUS NOK
@@ -200,7 +202,7 @@ int mybids_user(char uid[], AUCTIONLIST *list)
 
 int list_all_auctions(AUCTIONLIST *list)
 {
-    int no_aucs = GetAuctionlist(&list);
+    int no_aucs = GetAuctionlist(list);
     if (no_aucs == 0)
     {
         // STATUS NOK
@@ -258,11 +260,6 @@ int create_user_folder(char uid[], char pass[])
         }
         return 1;
     }
-    return 0;
-}
-
-int remove_user_folder(char uid[], char pass[])
-{
     return 0;
 }
 
@@ -450,12 +447,6 @@ int create_asset_folder(int aid)
     {
         return 0;
     }
-}
-
-int create_asset_file(Auction auc)
-{
-    printf("...");
-    return 0;
 }
 
 int create_end_file(Auction auc)
@@ -646,7 +637,8 @@ int GetHostedAuctionlist(char uid[], AUCTIONLIST *list)
 int LoadAuction(const char *filepath, AUCTIONLIST *list)
 {
     // Extract the AID from the filename
-    char *token = strtok(filepath, ".");
+    char *filepath_copy = strdup(filepath);
+    char *token = strtok(filepath_copy, ".");
     if (token != NULL)
     {
         int auctionID = atoi(token);
@@ -654,9 +646,11 @@ int LoadAuction(const char *filepath, AUCTIONLIST *list)
         if (list->no_aucs < 50)
         {
             list->aucs[list->no_aucs++] = auctionID;
+            free(filepath_copy);
             return 1; // Success
         }
     }
+    free(filepath_copy);
     return 0; // Failed to load auction or list full
 }
 
@@ -762,7 +756,7 @@ int LoadBid(const char *filepath, BIDLIST *list)
                    &current_bid->bid_value,
                    &current_bid->bid_datetime->tm_year,
                    &current_bid->bid_datetime->tm_mon, &current_bid->bid_datetime->tm_mday, &current_bid->bid_datetime->tm_hour,
-                   &current_bid->bid_datetime->tm_min, &current_bid->bid_datetime->tm_sec, (long)&current_bid->bid_sec_time) == 9)
+                   &current_bid->bid_datetime->tm_min, &current_bid->bid_datetime->tm_sec, &current_bid->bid_sec_time) == 9)
         {
             list->no_bids++;
             fclose(file);
@@ -789,9 +783,9 @@ int check_auction_name(char auction_name[])
         printf("Invalid input: auction size wrong.\n");
         return 0;
     }
-    for (int i = 0; i < strlen(auction_name); i++)
+    for (size_t i = 0; i < strlen(auction_name); i++)
     {
-        if (!isdigit(auction_name[i]) || !isalpha(auction_name[i]))
+        if (!isdigit(auction_name[i]) && !isalpha(auction_name[i]))
         {
             printf("Invalid input: auctions not alphanumerical.\n");
             return 0;
@@ -809,75 +803,56 @@ int check_file_name(char file_name[])
         printf("File not found.\n");
         return 0;
     }
-    else
-    {
-        char data[8192];
-        if (fscanf(file_readed, "%s", data) == 1)
-        {
-        }
-        fclose(file_readed);
-    }
-    return 0;
+    return 1;
 }
 
-char read_file_data(char file_name[])
+char *read_file_data(char *file_name)
 {
-    char data[8192];
-    int character;
-    if (fscanf(file_name, "%s", data) == 1)
-    {
-        char *buffer;
-        ssize_t index = 0;
-        while ((character = fgetc(file_name)) != EOF)
-        {
-            data[index++] = (char)character;
-        }
-
-        buffer[index] = '\0';
-        fclose(file_name);
-        return data;
-    }
-    else
-    {
-        return "No data.";
-    }
-}
-
-long int get_file_size(char file_name[])
-{
-    FILE *file = fopen(file_name, "rb");
-
+    FILE *file = fopen(file_name, "r");
     if (file != NULL)
     {
-        long int file_size;
-
-        // Move the file pointer to the end of the file
+        // Find the size of the file
         fseek(file, 0, SEEK_END);
+        long file_size = ftell(file);
+        fseek(file, 0, SEEK_SET);
 
-        // Get the current position of the file pointer which indicates the size of the file
-        file_size = ftell(file);
+        // Allocate memory for the file content
+        char *data = (char *)malloc(file_size + 1);
+        if (data != NULL)
+        {
+            // Read the entire file
+            size_t read_size = fread(data, 1, file_size, file);
 
+            // Null-terminate the string
+            data[read_size] = '\0';
+
+            fclose(file);
+            return data;
+        }
         fclose(file);
-        return file_size;
     }
+    return "No data.";
 }
 
-int check_start_value(int start_value)
+int get_file_size(char file_name[])
 {
-    int count = 0;
-
-    if (start_value == 0) //! verificar isto
+    FILE *file_readed;
+    file_readed = fopen(file_name, "r");
+    if (file_readed == NULL)
     {
+        printf("File not found.\n");
         return 0;
     }
+    fseek(file_readed, 0, SEEK_END);
+    long file_size = ftell(file_readed);
+    fseek(file_readed, 0, SEEK_SET);
+    fclose(file_readed);
+    return file_size;
+}
 
-    while (start_value != 0)
-    {
-        start_value = start_value / 10;
-        count++;
-    }
-
-    if (count > 6)
+int check_start_value(char start_value[])
+{
+    if (strlen(start_value) > 6)
     {
         return 0;
     }
@@ -887,17 +862,9 @@ int check_start_value(int start_value)
     }
 }
 
-int check_time_active_input(int time_active)
+int check_time_active_input(char time_active[])
 {
-    int count = 0;
-
-    while (time_active != 0)
-    {
-        time_active = time_active / 10;
-        count++;
-    }
-
-    if (count > 5)
+    if (strlen(time_active) > 5)
     {
         return 0;
     }
@@ -907,14 +874,47 @@ int check_time_active_input(int time_active)
     }
 }
 
-int check_open_credentials(char auction_name[], char file_name[], int start_value, int time_active)
+int check_open_credentials(char auction_name[], char file_name[], char start_value[], char time_active[])
 {
     int check = 0;
-
     check = check_auction_name(auction_name);
     check = check_file_name(file_name);
     check = check_start_value(start_value);
     check = check_time_active_input(time_active);
 
     return check;
+}
+
+int verify_file_name(char file_name[])
+{
+    if (strlen(file_name) > 32)
+    {
+        return 0;
+    }
+
+    for (size_t i = 0; i < strlen(file_name); i++)
+    {
+        if (!isdigit(file_name[i]) && !isalpha(file_name[i]) && file_name[i] != '.' && file_name[i] != '_' && file_name[i] != '-')
+        {
+            return 0;
+        }
+    }
+
+    if (file_name[strlen(file_name) - 4] != '.') // Verify if has the .txt extension
+    {
+        return 0;
+    }
+    {
+        return 0;
+    }
+
+    for (size_t i = strlen(file_name) - 1; i < strlen(file_name); i++) // Verify if has the .txt extension
+    {
+        if (!isalpha(file_name[i]))
+        {
+            return 0;
+        }
+    }
+
+    return 1;
 }
