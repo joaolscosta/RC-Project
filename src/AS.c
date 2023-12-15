@@ -343,10 +343,22 @@ void tcp_message_handle(ssize_t n, char buffer[])
             switch (result)
             {
             case 0:
-                strcpy(status, "NOK");
+                strcpy(status, "NLG");
                 sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             case 1:
+                strcpy(status, "EAU");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            case 2:
+                strcpy(status, "EOW");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            case 3:
+                strcpy(status, "END");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            case 4:
                 strcpy(status, "OK");
                 sprintf(reply, "%s %s\n", reply_code, status);
                 break;
@@ -407,15 +419,23 @@ void tcp_message_handle(ssize_t n, char buffer[])
             switch (result)
             {
             case 0:
-                strcpy(status, "NOK");
+                strcpy(status, "NLG");
                 sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             case 1:
-                strcpy(status, "OK");
+                strcpy(status, "NOK");
                 sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             case 2:
-                strcpy(status, "ERR");
+                strcpy(status, "ILG");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            case 3:
+                strcpy(status, "REF");
+                sprintf(reply, "%s %s\n", reply_code, status);
+                break;
+            case 4:
+                strcpy(status, "ACC");
                 sprintf(reply, "%s %s\n", reply_code, status);
                 break;
             }
@@ -434,7 +454,6 @@ void tcp_message_handle(ssize_t n, char buffer[])
         printf("Invalid handle input.\n");
     }
 }
-
 void server()
 {
     // UDP setup

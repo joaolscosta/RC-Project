@@ -46,9 +46,10 @@ typedef struct AUCTIONINFO
     int start_value;                  // Up to 6 digits
     time_t timeactive;                // represented up to 5 digits
     struct tm *start_datetime;
+    time_t start_fulltime;
     // END
-    struct tm *end_datetime;
-    time_t end_sec_time;
+    struct tm *end_datetime; // TODO APAGAR ACHO Q N USO
+    time_t end_sec_time;     // TODO APAGAR ACHO Q N USO
 } AUCTIONINFO;
 
 typedef struct AUCTIONLIST
@@ -99,21 +100,21 @@ int create_login_file(char uid[]);
 int delete_login_file(char uid[]);
 int create_hosted_folder(char uid[]);
 int create_bidded_folder(char uid[]);
-int create_hosted_auction_file(USERINFO user, AUCTIONINFO auc);
-int create_bidded_auction_file(USERINFO user, AUCTIONINFO auc);
+int create_hosted_auction_file(char uid[], int aid);
+int create_bidded_auction_file(char uid[], int aid);
 //   Auctions
-int create_auction_folder(int aid);
-int create_start_file(AUCTIONINFO auc, USERINFO user);
+int create_auction_folder(int aid, AUCTIONINFO auc, FILEINFO file, char *file_data);
+int create_start_file(int aid, AUCTIONINFO auc);
 int create_asset_folder(int aid);
 int create_asset(AUCTIONINFO auc);
-int create_end_file(AUCTIONINFO auc);
+int create_end_file(int aid);
 int create_bids_folder(int aid);
-int create_bid_file(AUCTIONINFO auc, USERINFO user, int bid_value);
+int create_bid_file(char uid[], int aid, int bid_value);
 // LookUps
 int LookUpUser(char uid[]);
 int LookUpUserPassword(char uid[], char pass[]);
 int LookUpUserLogin(char uid[]);
-int LookUpAssetFile(char *fname);
+int LookUpAssetFile(int aid, FILEINFO *file, char *file_data);
 int LookUpAuction(int aid, AUCTIONINFO *auc, BIDLIST *list);
 int GetHostedAuctionlist(char uid[], AUCTIONLIST *list);
 int LoadAuction(const char *filepath, AUCTIONLIST *list);
@@ -124,6 +125,7 @@ int GetAuctionlist(AUCTIONLIST *list);
 int LoadBid(const char *filepath, BIDLIST *list);
 void DisplayAuctions(AUCTIONLIST *list, char *response);
 char *DisplayRecord(AUCTIONINFO *auc, BIDLIST *list);
+AUCTIONINFO getAuction(int aid);
 // CHECKS NOT LOOKUPS
 int check_auction_name(char auction_name[]);
 int check_file_name(char file_name[]);

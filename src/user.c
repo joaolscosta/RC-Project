@@ -469,6 +469,7 @@ void tcp(char buffer[])
         }
         else
         {
+            /*
             char auction_name[33], file_name[33], file_data[8192];
             char start_value, time_active;
             char file_size;
@@ -481,6 +482,7 @@ void tcp(char buffer[])
                 sprintf(reply, "LIN %s %s %s %s %s %s %s %s\n", current_login_uid, current_login_pass, auction_name, start_value, time_active, file_name, file_size, file_data);
                 tcp_message(reply);
             }
+            */
         }
     }
     else if (strcmp(command, "close") == 0)
