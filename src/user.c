@@ -108,7 +108,7 @@ void udp_message_handle(ssize_t n, char buffer[], size_t buffer_size)
             // char list[8192];
             // sscanf(buffer, "%*s %*s %[^\n]", list);
             // printf("%s\n", list);
-            printf("%s\n", buffer);
+            printf("%s", buffer);
             memset(buffer, 0, buffer_size);
         }
         else if (strcmp(status, "NLG") == 0)
@@ -513,6 +513,7 @@ void tcp_message(char buffer[], size_t size)
         perror("write");
         exit(1);
     }
+
     char aux[8192];
     memset(aux, 0, sizeof(aux));
     while ((n = read(fd, aux, sizeof(aux) - 1)) > 0)
@@ -545,7 +546,6 @@ void tcp(char buffer[], size_t size)
         }
         else
         {
-            /*
             char auction_name[33], file_name[33], file_data[8192];
             char start_value[8192], time_active[8192];
             long int file_size;
@@ -558,7 +558,6 @@ void tcp(char buffer[], size_t size)
                 size_t buffer_size = sizeof(reply) / sizeof(reply[0]);
                 tcp_message(reply, buffer_size);
             }
-            */
         }
     }
     else if (strcmp(command, "close") == 0)
