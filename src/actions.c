@@ -352,6 +352,7 @@ int create_user_folder(char uid[], char pass[])
     }
     else
     {
+        // TODO VER pq é q isto ta aqui meti mas ja n sei se faz sentido
         if (!create_pass_file(uid, pass))
         {
             rmdir(folder_Path);
@@ -497,7 +498,6 @@ int create_auction_folder(int aid, AUCTIONINFO auc, FILEINFO file, char *file_da
 {
     // create the Auction folder
     char folder_Path[15];
-    // No Guia eles checkam o AID SIZE acho q n valia a pena ser aqui é melhor probbly na criacao da struct do auction
     sprintf(folder_Path, "AUCTIONS/%03d", aid);
     if (mkdir(folder_Path, 0700) == 0)
     {
@@ -1407,5 +1407,17 @@ int verify_file_name(char file_name[])
 
 int verify_bid_value(char bid_value[])
 {
+    if (strlen(bid_value) > 6)
+    {
+        return 0;
+    }
+
+    for (size_t i = 0; i < strlen(bid_value); i++)
+    {
+        if (!isdigit(bid_value[i]))
+        {
+            return 0;
+        }
+    }
     return 1;
 }

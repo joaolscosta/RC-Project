@@ -551,6 +551,10 @@ void server()
             n = read(tcp_socket, buffer, 128);
             if (n == -1)
                 exit(1);
+
+            printf("[TCP] Received: %.*s\n", (int)n, buffer);
+
+            tcp_message_handle(n, buffer);
         }
     }
 
