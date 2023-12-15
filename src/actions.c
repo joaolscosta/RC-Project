@@ -1364,10 +1364,16 @@ int check_time_active_input(char time_active[])
 
 int check_open_credentials(char auction_name[], char file_name[], char start_value[], char time_active[])
 {
-    int check = 0;
+    int check = 1;
     check = check_auction_name(auction_name);
+    if (check == 0)
+        return check;
     check = check_file_name(file_name);
+    if (check == 0)
+        return check;
     check = check_start_value(start_value);
+    if (check == 0)
+        return check;
     check = check_time_active_input(time_active);
 
     return check;
