@@ -545,6 +545,7 @@ void tcp(char buffer[], size_t size)
         }
         else
         {
+            /*
             char auction_name[33], file_name[33], file_data[8192];
             char start_value[8192], time_active[8192];
             long int file_size;
@@ -557,6 +558,7 @@ void tcp(char buffer[], size_t size)
                 size_t buffer_size = sizeof(reply) / sizeof(reply[0]);
                 tcp_message(reply, buffer_size);
             }
+            */
         }
     }
     else if (strcmp(command, "close") == 0)
