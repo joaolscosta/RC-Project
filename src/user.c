@@ -19,7 +19,7 @@ res - Localização onde a função getaddrinfo() armazenará informações sobr
 */
 struct addrinfo hints, *res;
 struct sockaddr_in addr;
-char buffer[128]; // buffer para onde serão escritos os dados recebidos do servidor
+char buffer[1000]; // buffer para onde serão escritos os dados recebidos do servidor MUDEI TEMPORARIAMENTE PARA TESTAR O SHOW_ASSETS
 
 char tcp_input[][11] = {"open", "close", "show_asset", "sa", "bid", "b"};
 
@@ -341,6 +341,7 @@ void udp(char buffer[], size_t size)
 
 void tcp_message_handle(char buffer[], size_t buffer_size)
 {
+
     char message_received[30];
     char status[30];
 
@@ -399,9 +400,12 @@ void tcp_message_handle(char buffer[], size_t buffer_size)
     {
         if (strcmp(status, "OK") == 0)
         {
-            char file_name[33], file_data[8192], file_size[8192];
+
+            char file_name[35], file_size[10];
 
             sscanf(buffer, "%*s %*s %s %s %*s", file_name, file_size);
+
+            char *file_data = malloc(atoi(file_size) + 1);
 
             int count_spaces = 0;
             int start_file_data_position = 0;
@@ -420,11 +424,12 @@ void tcp_message_handle(char buffer[], size_t buffer_size)
 
             int size = atoi(file_size);
 
+            // aqui do queres copiar do buffer a imagem q é enorme o teu buffer nem recebe a imagem toda
             memcpy(file_data, buffer + start_file_data_position, size);
 
-            file_data[size] = '\0';
+            file_data[size] = "\0";
 
-            FILE *file = fopen(file_name, "w");
+            FILE *file = fopen(file_name, "wb");
             if (file == NULL)
             {
                 printf("Failed to open file: %s\n", file_name);
@@ -438,6 +443,7 @@ void tcp_message_handle(char buffer[], size_t buffer_size)
                 fclose(file);
                 memset(buffer, 0, buffer_size);
             }
+            free(file_data);
         }
         else if (strcmp(status, "NOK") == 0)
         {
@@ -519,7 +525,6 @@ void tcp_message(char buffer[], size_t size)
         strcat(receive_buffer, aux);
     }
 
-    printf("ola\n");
     memset(buffer, 0, size);
 
     size_t buffer_size = sizeof(receive_buffer) / sizeof(receive_buffer[0]);

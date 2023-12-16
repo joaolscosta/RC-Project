@@ -238,7 +238,7 @@ int open_auction(AUCTIONINFO info, FILEINFO file, char *file_data, int *aid)
     // Create Auction Folder
     // Generate AID
     *aid = GenerateAid();
-    if (create_auction_folder(*aid, info, file, file_data) && create_hosted_auction_file(info.uid, aid))
+    if (create_auction_folder(*aid, info, file, file_data) && create_hosted_auction_file(info.uid, *aid))
     {
         // STATUS OK
         return 1;
@@ -279,6 +279,7 @@ int show_asset(int aid, FILEINFO *file, char *file_data)
 {
     if (LookUpAssetFile(aid, file, file_data))
     {
+        Download_Asset(file, file_data);
         // STATUS OK
         return 1;
     }
@@ -537,11 +538,15 @@ int create_start_file(int aid, AUCTIONINFO auc)
     if (start_file != NULL)
     {
         // Calculate start_fulltime
-        time_t start_fulltime = time(NULL);
-        fprintf(start_file, "%s %s %s %d %ld %4d−%02d−%02d %02d:%02d:%02d %ld", auc.uid, auc.name, auc.asset_fname,
-                auc.start_value, (long)auc.timeactive, auc.start_datetime->tm_year + 1900, auc.start_datetime->tm_mon + 1,
-                auc.start_datetime->tm_mday, auc.start_datetime->tm_hour, auc.start_datetime->tm_min, auc.start_datetime->tm_sec,
-                (long)start_fulltime);
+        time_t fulltime;
+        struct tm *current_time;
+        time(&fulltime);
+        current_time = gmtime(&fulltime);
+        // Write the start file
+        fprintf(start_file, "%s %s %s %d %d %4d−%02d−%02d %02d:%02d:%02d %ld", auc.uid, auc.name, auc.asset_fname,
+                auc.start_value, auc.timeactive, current_time->tm_year + 1900, current_time->tm_mon + 1,
+                current_time->tm_mday, current_time->tm_hour, current_time->tm_min, current_time->tm_sec,
+                (long)fulltime);
         fclose(start_file);
         return 1;
     }
@@ -567,12 +572,20 @@ int create_asset_folder(int aid)
 
 int create_asset_file(int aid, FILEINFO file, char *file_data)
 {
-    char asset_file_path[30];
+    char asset_file_path[45];
     sprintf(asset_file_path, "AUCTIONS/%03d/ASSET/%s", aid, file.file_name);
-    FILE *asset_file = fopen(asset_file_path, "w");
+    FILE *asset_file = fopen(asset_file_path, "wb");
     if (asset_file != NULL)
     {
-        fprintf(asset_file, "%s", file_data);
+        // printf("file size: %d\n", file.file_size);
+        size_t bytes_written = fwrite(file_data, sizeof(char), file.file_size, asset_file);
+        // printf("bytes written: %ld\n", bytes_written);
+        if (bytes_written != file.file_size)
+        {
+            fprintf(stderr, "Error: Could not write the entire file_data to the file.\n");
+            fclose(asset_file);
+            return 0;
+        }
         fclose(asset_file);
         return 1;
     }
@@ -737,7 +750,7 @@ int LookUpUserLogin(char uid[])
     return logged_in;
 }
 
-int LookUpAssetFile(int aid, FILEINFO *file, char *file_data)
+int LookUpAssetFile(int aid, FILEINFO *file, char **file_data)
 {
     struct dirent **entrylist;
     char dirname[21];
@@ -754,31 +767,63 @@ int LookUpAssetFile(int aid, FILEINFO *file, char *file_data)
     {
         if (entrylist[n_entries]->d_type == DT_REG)
         {
-            // TODO VER ISTO
-            char asset_file_path[30];
+            char asset_file_path[50]; // Adjust the size as needed
             sprintf(asset_file_path, "AUCTIONS/%03d/ASSET/%s", aid, entrylist[n_entries]->d_name);
-            FILE *asset_file = fopen(asset_file_path, "r");
+            FILE *asset_file = fopen(asset_file_path, "rb");
             if (asset_file != NULL)
             {
-                // TODO VER ISTO TAMANHO DO ARRAY
-                char asset_file_data[1000000];
-                if (fscanf(asset_file, "%s", asset_file_data) == 1)
+                // Determine the file size
+                fseek(asset_file, 0, SEEK_END);
+                size_t file_size = ftell(asset_file);
+                fseek(asset_file, 0, SEEK_SET);
+
+                // Allocate memory for the binary data
+                *file_data = (char *)malloc(file_size * sizeof(char));
+                if (*file_data == NULL)
                 {
-                    strcpy(file_data, asset_file_data);
-                    strcpy(file->file_name, entrylist[n_entries]->d_name);
-                    file->file_size = strlen(asset_file_data);
+                    perror("Error allocating memory");
                     fclose(asset_file);
+                    continue;
+                }
+                // Read the binary data
+                if (fread(*file_data, 1, file_size, asset_file) == file_size)
+                {
+                    strcpy(file->file_name, entrylist[n_entries]->d_name);
+                    file->file_size = file_size;
+                    // Do something with asset_file_data if needed
                     asset_file_found = 1;
-                    free(entrylist[n_entries]); // Free memory for each entry
-                    break;
+                    printf("Downloading file %s", file_data);
                 }
                 fclose(asset_file);
             }
         }
         free(entrylist[n_entries]); // Free memory for each entry
     }
-    free(entrylist); // Free the entryList array
+    free(entrylist); // Free the entryList array after the loop
     return asset_file_found;
+}
+
+int Download_Asset(FILEINFO *file, char *file_data)
+{
+    // TODO ESTA A PRINTAR UM CHARACTER A MAIS ACHO EU
+    printf("Downloading file %s", file_data);
+    FILE *downloaded_file = fopen(file->file_name, "wb");
+    if (downloaded_file != NULL)
+    {
+        size_t bytes_written = fwrite(file_data, sizeof(char), file->file_size, downloaded_file);
+        if (bytes_written != file->file_size)
+        {
+            fprintf(stderr, "Error: Could not write the entire file_data to the file.\n");
+            fclose(downloaded_file);
+            return 0;
+        }
+        fclose(downloaded_file);
+        return 1;
+    }
+    else
+    {
+        return 0;
+    }
 }
 
 int LookUpAuction(int aid, AUCTIONINFO *auc, BIDLIST *list)

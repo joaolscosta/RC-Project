@@ -44,12 +44,12 @@ typedef struct AUCTIONINFO
     char name[AUCTION_NAME_SIZE];     // Define 11
     char asset_fname[FILE_NAME_SIZE]; // Define 255 TODO MUDAR DPS
     int start_value;                  // Up to 6 digits
-    time_t timeactive;                // represented up to 5 digits
+    int timeactive;                   // represented up to 5 digits
     struct tm *start_datetime;
     time_t start_fulltime;
     // END
     struct tm *end_datetime; // TODO APAGAR ACHO Q N USO
-    time_t end_sec_time;     // TODO APAGAR ACHO Q N USO
+    int end_sec_time;        // TODO APAGAR ACHO Q N USO
 } AUCTIONINFO;
 
 typedef struct AUCTIONLIST
@@ -115,7 +115,7 @@ int create_bid_file(char uid[], int aid, int bid_value);
 int LookUpUser(char uid[]);
 int LookUpUserPassword(char uid[], char pass[]);
 int LookUpUserLogin(char uid[]);
-int LookUpAssetFile(int aid, FILEINFO *file, char *file_data);
+int LookUpAssetFile(int aid, FILEINFO *file, char **file_data);
 int LookUpAuction(int aid, AUCTIONINFO *auc, BIDLIST *list);
 int GetHostedAuctionlist(char uid[], AUCTIONLIST *list);
 int LoadAuction(const char *filepath, AUCTIONLIST *list);

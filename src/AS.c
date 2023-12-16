@@ -287,11 +287,24 @@ void tcp_message_handle(ssize_t n, char buffer[], int tcp_socket)
         char uid[UID_SIZE], pass[PASS_SIZE];
         char auction_name[AUCTION_NAME_SIZE], start_value[7], time_active[6];
         char file_name[FILE_NAME_SIZE], file_size[9];
-        char *file_data = (char *)malloc(1000000 * sizeof(char)); // TODO MUDAR ISTO PARA O TAMANHO DO FICHEIRO COM FILE_SIZE
-        sscanf(buffer, "%*s %s %s %s %s %s %s %s %s", uid, pass, auction_name, start_value, time_active, file_name, file_size, file_data);
+        sscanf(buffer, "%*s %s %s %s %s %s %s %s", uid, pass, auction_name, start_value, time_active, file_name, file_size);
         strcpy(reply_code, "ROA");
-        if (!check_open_credentials(auction_name, file_name, start_value, time_active) && verify_user_credentials(uid, pass))
+        if (check_open_credentials(auction_name, file_name, start_value, time_active) && verify_user_credentials(uid, pass))
         {
+            char *file_data = (char *)malloc((atoi(file_size) + 1) * sizeof(char)); // TODO MUDAR ISTO PARA O TAMANHO DO FICHEIRO COM FILE_SIZE
+            char *file_data_start = buffer;
+            for (int i = 0; i < 8; i++)
+            {
+                file_data_start = strchr(file_data_start, ' ');
+                if (file_data_start == NULL)
+                {
+                    // handle error
+                }
+                file_data_start++; // skip past the space
+            }
+            size_t file_data_size = buffer + n - file_data_start;
+            memcpy(file_data, file_data_start, file_data_size);
+            // printf("file_data: %s", file_data);
             char status[4];
             AUCTIONINFO info;
             FILEINFO file;
@@ -378,11 +391,12 @@ void tcp_message_handle(ssize_t n, char buffer[], int tcp_socket)
         strcpy(reply_code, "RSA");
         if (verify_AID(aid_s))
         {
+            // Read File funciton
             FILEINFO info;
-            char *file_data = (char *)malloc(1000000 * sizeof(char)); // TODO MUDAR ISTO PARA O TAMANHO DO FICHEIRO COM FILE_SIZE
+            char *file_data = NULL;
             char status[4];
             int aid = atoi(aid_s);
-            int result = show_asset(aid, &info, file_data);
+            int result = show_asset(aid, &info, &file_data);
             switch (result)
             {
             case 0:
@@ -391,7 +405,9 @@ void tcp_message_handle(ssize_t n, char buffer[], int tcp_socket)
                 break;
             case 1:
                 strcpy(status, "OK");
-                sprintf(reply, "%s %s\n", reply_code, status);
+                reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(info.file_name) + 8 + info.file_size + 6) * sizeof(char)); // 8- File size max
+                sprintf(reply, "%s %s %s %d %s\n", reply_code, status, info.file_name, info.file_size, file_data);
+                free(file_data);
                 break;
             }
         }
@@ -456,7 +472,7 @@ void tcp_message_handle(ssize_t n, char buffer[], int tcp_socket)
 
     // CUIDADO COM O CLOSE DO TCP N TENHO A CERTEZA SE TOU A FZR BEM
     /* Envia a mensagem recebida (atualmente presente no buffer) para a socket */
-    n = write(tcp_socket, reply, n);
+    n = write(tcp_socket, reply, strlen(reply));
     if (n == -1)
     {
         free(reply);
@@ -565,6 +581,7 @@ void server()
 
             printf("[TCP] Received: %.*s", (int)n, buffer);
 
+            // Este n ta mt scuffed
             tcp_message_handle(n, buffer, tcp_socket);
 
             // CUIDADO COM O CLOSE DO TCP N TENHO A CERTEZA SE TOU A FZR BEM
