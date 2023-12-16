@@ -523,6 +523,9 @@ void tcp_message(char buffer[], size_t size)
     memset(buffer, 0, size);
 
     size_t buffer_size = sizeof(receive_buffer) / sizeof(receive_buffer[0]);
+
+    printf("[TCP] Received: %s", receive_buffer);
+
     tcp_message_handle(receive_buffer, buffer_size);
 
     memset(receive_buffer, 0, sizeof(receive_buffer));

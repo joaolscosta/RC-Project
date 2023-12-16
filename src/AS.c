@@ -276,7 +276,7 @@ void udp_message_handle(ssize_t n, char buffer[])
 }
 
 // TODO ACHO Q N PRECISO DE PASSAR ESTES ARGS MAS YAH
-void tcp_message_handle(ssize_t n, char buffer[])
+void tcp_message_handle(ssize_t n, char buffer[], int tcp_socket)
 {
     char *reply = (char *)malloc(9 * sizeof(char));
     char code[4];
@@ -290,7 +290,7 @@ void tcp_message_handle(ssize_t n, char buffer[])
         char *file_data = (char *)malloc(1000000 * sizeof(char)); // TODO MUDAR ISTO PARA O TAMANHO DO FICHEIRO COM FILE_SIZE
         sscanf(buffer, "%*s %s %s %s %s %s %s %s %s", uid, pass, auction_name, start_value, time_active, file_name, file_size, file_data);
         strcpy(reply_code, "ROA");
-        if (check_open_credentials(auction_name, file_name, start_value, time_active))
+        if (!check_open_credentials(auction_name, file_name, start_value, time_active) && verify_user_credentials(uid, pass))
         {
             char status[4];
             AUCTIONINFO info;
@@ -453,6 +453,17 @@ void tcp_message_handle(ssize_t n, char buffer[])
         sprintf(reply, "%s\n", reply_code);
         printf("Invalid handle input.\n");
     }
+
+    // CUIDADO COM O CLOSE DO TCP N TENHO A CERTEZA SE TOU A FZR BEM
+    /* Envia a mensagem recebida (atualmente presente no buffer) para a socket */
+    n = write(tcp_socket, reply, n);
+    if (n == -1)
+    {
+        free(reply);
+        perror("write");
+        exit(1);
+    }
+    free(reply);
 }
 void server()
 {
@@ -531,7 +542,7 @@ void server()
                 exit(1);
             }
 
-            printf("[UDP] Received: %.*s\n", (int)n, buffer);
+            printf("[UDP] Received: %.*s", (int)n, buffer);
 
             udp_message_handle(n, buffer);
         }
@@ -552,9 +563,12 @@ void server()
             if (n == -1)
                 exit(1);
 
-            printf("[TCP] Received: %.*s\n", (int)n, buffer);
+            printf("[TCP] Received: %.*s", (int)n, buffer);
 
-            tcp_message_handle(n, buffer);
+            tcp_message_handle(n, buffer, tcp_socket);
+
+            // CUIDADO COM O CLOSE DO TCP N TENHO A CERTEZA SE TOU A FZR BEM
+            close(tcp_socket);
         }
     }
 
