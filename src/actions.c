@@ -716,7 +716,7 @@ int LookUpUserLogin(char uid[])
     int n_entries = scandir(dirname, &entrylist, NULL, alphasort);
     if (n_entries < 0)
     {
-        perror("scandir");
+        printf("aqui\n");
         return 0;
     }
     // Care here on the loop for later should work for now
@@ -1375,7 +1375,6 @@ int check_open_credentials(char auction_name[], char file_name[], char start_val
     if (check == 0)
         return check;
     check = check_time_active_input(time_active);
-
     return check;
 }
 
