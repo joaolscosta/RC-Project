@@ -1,4 +1,5 @@
 #include "actions.h"
+#include <sys/sendfile.h>
 
 #define GROUP_PORT "58105"
 #define DEFAULT_PORT "58011"
@@ -417,14 +418,11 @@ void tcp_message_handle(char buffer[], size_t buffer_size)
                 }
             }
 
-            file_data[0] = '\0';
-            for (size_t i = start_file_data_position; i < strlen(buffer); i++)
-            {
-                // Create a temporary string to hold the current character and a null terminator
-                char temp[2] = {buffer[i], '\0'};
+            int size = atoi(file_size);
 
-                strcat(file_data, temp);
-            }
+            memcpy(file_data, buffer + start_file_data_position, size);
+
+            file_data[size] = '\0';
 
             FILE *file = fopen(file_name, "w");
             if (file == NULL)
@@ -521,6 +519,7 @@ void tcp_message(char buffer[], size_t size)
         strcat(receive_buffer, aux);
     }
 
+    printf("ola\n");
     memset(buffer, 0, size);
 
     size_t buffer_size = sizeof(receive_buffer) / sizeof(receive_buffer[0]);
@@ -546,17 +545,50 @@ void tcp(char buffer[], size_t size)
         }
         else
         {
-            char auction_name[33], file_name[33], file_data[8192];
+            char auction_name[33], file_name[33];
             char start_value[8192], time_active[8192];
             long int file_size;
+            int file_data;
             sscanf(buffer, "open %s %s %s %s", auction_name, file_name, start_value, time_active);
             if (check_open_credentials(auction_name, file_name, start_value, time_active))
             {
-                strcpy(file_data, read_file_data(file_name));
+                int in_fd = open(file_name, O_RDONLY);
+                if (in_fd == -1)
+                {
+                    perror("open");
+                    return;
+                }
+
+                struct stat stat_buf;
+                if (fstat(in_fd, &stat_buf) == -1)
+                {
+                    perror("fstat");
+                    return;
+                }
+                char *file_data = malloc(stat_buf.st_size);
+                if (file_data == NULL)
+                {
+                    perror("malloc");
+                    return;
+                }
+
+                ssize_t read_bytes = read(in_fd, file_data, stat_buf.st_size);
+                if (read_bytes == -1)
+                {
+                    perror("read");
+                    return;
+                }
+                file_data[stat_buf.st_size] = '\0';
+
+                close(in_fd);
+
                 file_size = get_file_size(file_name);
-                sprintf(reply, "OPA %s %s %s %s %s %s %ld %s\n", current_login_uid, current_login_pass, auction_name, start_value, time_active, file_name, (char)file_size, file_data);
+                sprintf(reply, "OPA %s %s %s %s %s %s %ld %s\n", current_login_uid, current_login_pass, auction_name, start_value, time_active, file_name, file_size, file_data);
                 size_t buffer_size = sizeof(reply) / sizeof(reply[0]);
+
                 tcp_message(reply, buffer_size);
+
+                free(file_data);
             }
         }
     }
