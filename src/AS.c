@@ -575,22 +575,14 @@ void server()
                 exit(1);
             }
 
-            ssize_t total_bytes_read = 0;
-            while (1)
-            {
-                ssize_t bytes_read = read(tcp_socket, buffer + total_bytes_read, sizeof(buffer) - total_bytes_read);
-                if (bytes_read == -1)
-                {
-                    perror("read");
-                    exit(1);
-                }
-                else if (bytes_read == 0)
-                {
-                    // No more data to read
-                    break;
-                }
-                total_bytes_read += bytes_read;
-            }
+            n = read(tcp_socket, buffer, sizeof(buffer));
+            if (n == -1)
+                exit(1);
+
+            printf("[TCP] Received: %.*s", (int)n, buffer);
+
+            // Este n ta mt scuffed
+            tcp_message_handle(n, buffer, tcp_socket);
 
             // CUIDADO COM O CLOSE DO TCP N TENHO A CERTEZA SE TOU A FZR BEM
             close(tcp_socket);
