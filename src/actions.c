@@ -275,11 +275,11 @@ int close_auction(USERINFO info, int aid)
     }
 }
 
-int show_asset(int aid, FILEINFO *file, char *file_data)
+int show_asset(int aid, FILEINFO *file, char **file_data)
 {
     if (LookUpAssetFile(aid, file, file_data))
     {
-        Download_Asset(file, file_data);
+        Download_Asset(file, *file_data);
         // STATUS OK
         return 1;
     }
@@ -578,7 +578,7 @@ int create_asset_file(int aid, FILEINFO file, char *file_data)
     if (asset_file != NULL)
     {
         // printf("file size: %d\n", file.file_size);
-        size_t bytes_written = fwrite(file_data, sizeof(char), file.file_size, asset_file);
+        size_t bytes_written = fwrite(file_data, 1, file.file_size, asset_file);
         // printf("bytes written: %ld\n", bytes_written);
         if (bytes_written != file.file_size)
         {
@@ -778,7 +778,7 @@ int LookUpAssetFile(int aid, FILEINFO *file, char **file_data)
                 fseek(asset_file, 0, SEEK_SET);
 
                 // Allocate memory for the binary data
-                *file_data = (char *)malloc(file_size * sizeof(char));
+                *file_data = (char *)malloc(file_size);
                 if (*file_data == NULL)
                 {
                     perror("Error allocating memory");
@@ -786,14 +786,18 @@ int LookUpAssetFile(int aid, FILEINFO *file, char **file_data)
                     continue;
                 }
                 // Read the binary data
-                if (fread(*file_data, 1, file_size, asset_file) == file_size)
+                size_t bytes_read = fread(*file_data, 1, file_size, asset_file);
+                if (bytes_read != file_size)
                 {
-                    strcpy(file->file_name, entrylist[n_entries]->d_name);
-                    file->file_size = file_size;
-                    // Do something with asset_file_data if needed
-                    asset_file_found = 1;
-                    printf("Downloading file %s", file_data);
+                    perror("Error reading file");
+                    free(*file_data);
+                    fclose(asset_file);
+                    continue;
                 }
+                strcpy(file->file_name, entrylist[n_entries]->d_name);
+                file->file_size = file_size;
+                asset_file_found = 1;
+
                 fclose(asset_file);
             }
         }
@@ -805,12 +809,10 @@ int LookUpAssetFile(int aid, FILEINFO *file, char **file_data)
 
 int Download_Asset(FILEINFO *file, char *file_data)
 {
-    // TODO ESTA A PRINTAR UM CHARACTER A MAIS ACHO EU
-    printf("Downloading file %s", file_data);
     FILE *downloaded_file = fopen(file->file_name, "wb");
     if (downloaded_file != NULL)
     {
-        size_t bytes_written = fwrite(file_data, sizeof(char), file->file_size, downloaded_file);
+        size_t bytes_written = fwrite(file_data, 1, file->file_size, downloaded_file);
         if (bytes_written != file->file_size)
         {
             fprintf(stderr, "Error: Could not write the entire file_data to the file.\n");
@@ -820,10 +822,7 @@ int Download_Asset(FILEINFO *file, char *file_data)
         fclose(downloaded_file);
         return 1;
     }
-    else
-    {
-        return 0;
-    }
+    return 0;
 }
 
 int LookUpAuction(int aid, AUCTIONINFO *auc, BIDLIST *list)
@@ -1329,6 +1328,7 @@ int check_auction_name(char auction_name[])
 
 int check_file_name(char file_name[])
 {
+    // TODO TAS SO A CHECKAR NA DIRETORIA TENS DE CHECKAR NO PC EM GERAL E DEVOLVER O REAL PATH ACHO EU MAS YAH
     FILE *file_readed;
     file_readed = fopen(file_name, "r");
     if (file_readed == NULL)

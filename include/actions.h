@@ -88,7 +88,7 @@ int show_record_user(int aid, AUCTIONINFO *auc, BIDLIST *list);
 //  TCP
 int open_auction(AUCTIONINFO info, FILEINFO file, char *file_data, int *aid);
 int close_auction(USERINFO info, int aid);
-int show_asset(int aid, FILEINFO *file, char *file_data);
+int show_asset(int aid, FILEINFO *file, char **file_data);
 int bid(USERINFO info, int aid, int bid_value);
 // LOCAL
 // int exit(char buffer[]);

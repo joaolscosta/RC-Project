@@ -407,9 +407,9 @@ void tcp_message_handle(ssize_t n, char buffer[], int tcp_socket)
                 strcpy(status, "OK");
                 reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(info.file_name) + 8 + info.file_size + 6) * sizeof(char)); // 8- File size max
                 sprintf(reply, "%s %s %s %d %s\n", reply_code, status, info.file_name, info.file_size, file_data);
-                free(file_data);
                 break;
             }
+            free(file_data);
         }
         else
         {
