@@ -9,7 +9,7 @@ ssize_t n;
 socklen_t udp_addrlen;
 struct addrinfo udp_hints, *udp_res;
 struct sockaddr_in udp_addr;
-char buffer[128];
+char buffer[10106128];
 
 char *ASport = DEFAULT_PORT; // Chanhge to GROUO PORT
 int verbose = 0;
@@ -278,7 +278,7 @@ void udp_message_handle(ssize_t n, char buffer[])
 // TODO ACHO Q N PRECISO DE PASSAR ESTES ARGS MAS YAH
 void tcp_message_handle(ssize_t n, char buffer[], int tcp_socket)
 {
-    char *reply = (char *)malloc(9 * sizeof(char));
+    char *reply = (char *)malloc(9);
     char code[4];
     char reply_code[4];
     sscanf(buffer, "%s ", code);  // TODO VERIFICAR SE TOU A RECEBER A MSG COM \n NO FIM !!!
@@ -575,7 +575,7 @@ void server()
                 exit(1);
             }
 
-            n = read(tcp_socket, buffer, 128);
+            n = read(tcp_socket, buffer, sizeof(buffer));
             if (n == -1)
                 exit(1);
 
