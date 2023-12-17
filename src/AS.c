@@ -20,13 +20,12 @@ void udp_message_handle(ssize_t n, char buffer[])
     char *reply = (char *)malloc(9 * sizeof(char));
     char code[4];
     char reply_code[4];
-    sscanf(buffer, "%s ", code);  // TODO VERIFICAR SE TOU A RECEBER A MSG COM \n NO FIM !!!
+    sscanf(buffer, "%s ", code);
     if (strcmp(code, "LIN") == 0) // Login
     {
         char uid[UID_SIZE], pass[PASS_SIZE];
         sscanf(buffer, "%*s %s %s", uid, pass);
         strcpy(reply_code, "RLI");
-        // DUVIDA PRECISO DE MANDAR ALGO AO USER A DIZER Q N DEU OU SO ESCREVO NO TERMINAL DO SERVER?
         if (verify_user_credentials(uid, pass))
         {
             char status[4];
@@ -142,9 +141,10 @@ void udp_message_handle(ssize_t n, char buffer[])
             {
                 char *response = (char *)malloc((list.no_aucs * 6 + 1) * sizeof(char));
                 DisplayAuctions(&list, response);
+                printf("response: %s\n", response);
                 strcpy(status, "OK");
                 reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 3) * sizeof(char));
-                sprintf(reply, "%s %s %s\n", reply_code, status, response);
+                sprintf(reply, "%s %s%s\n", reply_code, status, response);
                 free(response);
                 break;
             }
@@ -183,7 +183,7 @@ void udp_message_handle(ssize_t n, char buffer[])
                 DisplayAuctions(&list, response);
                 strcpy(status, "OK");
                 reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 3) * sizeof(char));
-                sprintf(reply, "%s %s %s\n", reply_code, status, response);
+                sprintf(reply, "%s %s%s\n", reply_code, status, response);
                 free(response);
                 break;
             }
@@ -213,8 +213,8 @@ void udp_message_handle(ssize_t n, char buffer[])
             char *response = (char *)malloc((list.no_aucs * 6 + 1) * sizeof(char));
             DisplayAuctions(&list, response);
             strcpy(status, "OK");
-            reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 4) * sizeof(char));
-            sprintf(reply, "%s %s %s\n", reply_code, status, response);
+            reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 3) * sizeof(char));
+            sprintf(reply, "%s %s%s\n", reply_code, status, response);
             free(response);
             break;
         }
@@ -224,7 +224,7 @@ void udp_message_handle(ssize_t n, char buffer[])
     {
         char aid_s[AID_SIZE];
         sscanf(buffer, "%*s %s", aid_s);
-        strcpy(reply_code, "RUR");
+        strcpy(reply_code, "RRC");
         if (verify_AID(aid_s))
         {
             int aid = atoi(aid_s);
@@ -244,8 +244,10 @@ void udp_message_handle(ssize_t n, char buffer[])
                 // Acho eu q é preciso not sure
                 strcpy(status, "OK");
                 char *response = DisplayRecord(&info, &list);
+                // printf("response: %s\n", response);
                 reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 4) * sizeof(char));
-                sprintf(reply, "%s %s %s\n", reply_code, status, response);
+                sprintf(reply, "%s %s ", reply_code, status);
+                strcat(reply, response);
                 free(response);
                 break;
             }
@@ -276,7 +278,7 @@ void udp_message_handle(ssize_t n, char buffer[])
 }
 
 // TODO ACHO Q N PRECISO DE PASSAR ESTES ARGS MAS YAH
-void tcp_message_handle(ssize_t n, char buffer[], int tcp_socket)
+void tcp_message_handle(char buffer[], int tcp_socket)
 {
     char *reply = (char *)malloc(9);
     char code[4];
@@ -454,6 +456,9 @@ void tcp_message_handle(ssize_t n, char buffer[], int tcp_socket)
                 strcpy(status, "ACC");
                 sprintf(reply, "%s %s\n", reply_code, status);
                 break;
+            case 5:
+                strcpy(reply_code, "ERR");
+                sprintf(reply, "%s\n", reply_code);
             }
         }
         else
@@ -582,7 +587,7 @@ void server()
             printf("[TCP] Received: %.*s", (int)n, buffer);
 
             // Este n ta mt scuffed
-            tcp_message_handle(n, buffer, tcp_socket);
+            tcp_message_handle(buffer, tcp_socket);
 
             // CUIDADO COM O CLOSE DO TCP N TENHO A CERTEZA SE TOU A FZR BEM
             close(tcp_socket);

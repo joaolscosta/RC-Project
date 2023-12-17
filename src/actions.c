@@ -1,5 +1,10 @@
 #include "actions.h"
 
+int reverseAlphasort(const struct dirent **a, const struct dirent **b)
+{
+    return alphasort(b, a);
+}
+
 int verify_UID(char uid[])
 {
     int uid_length = calculate_str_length(uid);
@@ -214,7 +219,7 @@ int list_all_auctions(AUCTIONLIST *list)
 
 int show_record_user(int aid, AUCTIONINFO *auc_info, BIDLIST *bid_list)
 {
-    if (!LookUpAuction(aid, &auc_info, &bid_list))
+    if (!LookUpAuction(aid, auc_info, bid_list))
     {
         // STATUS NOK
         return 0;
@@ -292,6 +297,10 @@ int bid(USERINFO info, int aid, int bid_value)
     // ESTRANHO NO ENUNCIADO N DIZEM PARA CHECKAR SE O AUC EXISTE OU N
     // PQ É Q EU RECEBO A PASS NO BID??? É PARA VERIFICAR SE TA LOGGED IN? EU PROCURO SÓ PELO FICHEIRO LOGIN
     // Check if user is logged in
+    if (!auctionExists(aid))
+    {
+        return 5;
+    }
     if (!LookUpUserLogin(info.uid))
     {
         // STATUS NLG
@@ -307,18 +316,15 @@ int bid(USERINFO info, int aid, int bid_value)
         // STATUS ILG
         return 2;
     }
-    if (bid_value < GetHighestBid(aid))
+    if (bid_value <= GetHighestBid(aid) || bid_value <= getAuctionStartValue(aid))
     {
-        // STATUS REF
+        // STATUS LOW
         return 3;
     }
-    else
-    {
-        create_bid_file(info.uid, aid, bid_value);
-        create_bidded_auction_file(info.uid, aid);
-        // STATUS ACC
-        return 4;
-    }
+    create_bid_file(info.uid, aid, bid_value);
+    create_bidded_auction_file(info.uid, aid);
+    // STATUS ACC
+    return 4;
 }
 
 // Register User
@@ -543,7 +549,7 @@ int create_start_file(int aid, AUCTIONINFO auc)
         time(&fulltime);
         current_time = gmtime(&fulltime);
         // Write the start file
-        fprintf(start_file, "%s %s %s %d %d %4d−%02d−%02d %02d:%02d:%02d %ld", auc.uid, auc.name, auc.asset_fname,
+        fprintf(start_file, "%s %s %s %d %d %4d-%02d-%02d %02d:%02d:%02d %ld", auc.uid, auc.name, auc.asset_fname,
                 auc.start_value, auc.timeactive, current_time->tm_year + 1900, current_time->tm_mon + 1,
                 current_time->tm_mday, current_time->tm_hour, current_time->tm_min, current_time->tm_sec,
                 (long)fulltime);
@@ -600,12 +606,10 @@ int create_end_file(int aid)
     // Get the current time
     time_t end_time = time(NULL);
 
-    // TODO fiz a função q lé tudo mas aqui so preciso do start time acho eu
-    AUCTIONINFO auc;
-    auc = getAuction(aid);
+    long start_fulltime = getAuctionTime(aid);
 
     // Calculate the duration of the auction
-    double duration = difftime(end_time, auc.start_fulltime);
+    double duration = (long)end_time - start_fulltime;
 
     // Convert the end time to a string in the format YYYY-MM-DD HH:MM:SS
     char end_datetime[20];
@@ -619,7 +623,7 @@ int create_end_file(int aid)
     if (file != NULL)
     {
         // Write the end datetime and duration to the file
-        fprintf(file, "%s %f\n", end_datetime, duration);
+        fprintf(file, "%s %d\n", end_datetime, (int)duration);
         // Close the file
         fclose(file);
         return 1;
@@ -644,9 +648,9 @@ int create_bids_folder(int aid)
 int create_bid_file(char uid[], int aid, int bid_value)
 {
     // TODO get Auction only for start time
-    AUCTIONINFO auc = getAuction(aid);
-    char bid_file_path[26];
-    sprintf(bid_file_path, "AUCTIONS/%03d/%06d.txt", aid, bid_value);
+    long start_fulltime = getAuctionTime(aid);
+    char bid_file_path[30];
+    sprintf(bid_file_path, "AUCTIONS/%03d/BIDS/%06d.txt", aid, bid_value);
     FILE *bid_file = fopen(bid_file_path, "w");
     if (bid_file != NULL)
     {
@@ -655,9 +659,9 @@ int create_bid_file(char uid[], int aid, int bid_value)
         struct tm *current_time;
         time(&full_time);
         current_time = gmtime(&full_time);
-        fprintf(bid_file, "%s %d %4d−%02d−%02d %02d:%02d:%02d %ld", uid, bid_value, current_time->tm_year + 1900,
+        fprintf(bid_file, "%s %d %4d-%02d-%02d %02d:%02d:%02d %ld", uid, bid_value, current_time->tm_year + 1900,
                 current_time->tm_mon + 1, current_time->tm_mday, current_time->tm_hour, current_time->tm_min, current_time->tm_sec,
-                (long)(full_time - auc.start_fulltime));
+                (long)((long)full_time - start_fulltime));
         fclose(bid_file);
         return 1;
     }
@@ -729,7 +733,6 @@ int LookUpUserLogin(char uid[])
     int n_entries = scandir(dirname, &entrylist, NULL, alphasort);
     if (n_entries < 0)
     {
-        printf("aqui\n");
         return 0;
     }
     // Care here on the loop for later should work for now
@@ -827,86 +830,106 @@ int Download_Asset(FILEINFO *file, char *file_data)
 
 int LookUpAuction(int aid, AUCTIONINFO *auc, BIDLIST *list)
 {
-    struct dirent **entrylist;
-    char dirname[15];
-    sprintf(dirname, "AUCTIONS/%03d", aid);
-    int n_entries = scandir(dirname, &entrylist, NULL, alphasort);
-    if (n_entries < 0)
-    {
-        perror("scandir"); // TODO RETIRAR OS PERRORS
-        return 0;
-    }
     int auction_folder_found = 0; // QUANDO SE ENCONTRA O START FILE
     char start_file[21];
     char end_file[19];
     sprintf(start_file, "START_%03d.txt", aid);
     sprintf(end_file, "END_%03d.txt", aid);
+    auc->start_datetime = (struct tm *)malloc(sizeof(struct tm));
+    auc->end_datetime = (struct tm *)malloc(sizeof(struct tm));
+    auction_folder_found = ReadStartFile(aid, auc);
+    printf("Auction ID: %s\n", auc->uid);
+    printf("Start Year: %d\n", auc->start_datetime->tm_year);
+    ReadEndFile(aid, auc);
+    printf("END Year: %d\n", auc->end_datetime->tm_year);
+    GetBidList(aid, list);
+    return auction_folder_found;
+}
+
+int ReadStartFile(int aid, AUCTIONINFO *auc)
+{
+    struct dirent **entrylist;
+    int n_entries;
+    char dirname[21];
+    char start_file[32];
+    sprintf(start_file, "START_%03d.txt", aid);
+    sprintf(dirname, "AUCTIONS/%03d", aid);
+    n_entries = scandir(dirname, &entrylist, 0, NULL);
+    if (n_entries <= 0)
+    {
+        free(entrylist);
+        return 0;
+    }
     while (n_entries--)
     {
         if (entrylist[n_entries]->d_type == DT_REG && strcmp(entrylist[n_entries]->d_name, start_file) == 0)
         {
-            // READ START FILE
-            // TALVEZ METER ISTO NUMA FUNCAO
             char start_file_path[30];
             sprintf(start_file_path, "AUCTIONS/%03d/START_%03d.txt", aid, aid);
             FILE *start_file = fopen(start_file_path, "r");
             if (start_file != NULL)
             {
-                if (fscanf(start_file, "%s %s %s %d %ld %4d−%02d−%02d %02d:%02d:%02d %ld",
-                           auc->uid, auc->name, auc->asset_fname, &auc->start_value, &auc->timeactive,
-                           &auc->start_datetime->tm_year, &auc->start_datetime->tm_mon, &auc->start_datetime->tm_mday,
-                           &auc->start_datetime->tm_hour, &auc->start_datetime->tm_min, &auc->start_datetime->tm_sec,
-                           &auc->timeactive) == 12)
-                {
-                    fclose(start_file);
-                    auction_folder_found = 1;
-                    free(entrylist[n_entries]); // Free memory for each entry
-                    break;
-                }
+                int year, month, day, hour, minute, second;
+                fscanf(start_file, "%s %s %s %d %d %4d-%02d-%02d %02d:%02d:%02d %d",
+                       auc->uid, auc->name, auc->asset_fname, &auc->start_value, &auc->timeactive,
+                       &year, &month, &day, &hour, &minute, &second, &auc->start_fulltime);
+                auc->start_datetime->tm_year = year;
+                auc->start_datetime->tm_mon = month;
+                auc->start_datetime->tm_mday = day;
+                auc->start_datetime->tm_hour = hour;
+                auc->start_datetime->tm_min = minute;
+                auc->start_datetime->tm_sec = second;
                 fclose(start_file);
+                return 1;
             }
-            free(entrylist[n_entries]); // Free memory for each entry
         }
-        else if (entrylist[n_entries]->d_type == DT_REG && strcmp(entrylist[n_entries]->d_name, end_file) == 0)
+        free(entrylist[n_entries]);
+    }
+    free(entrylist);
+    return 0;
+}
+
+int ReadEndFile(int aid, AUCTIONINFO *auc)
+{
+    struct dirent **entrylist;
+    int n_entries;
+    char dirname[21];
+    char end_file[32];
+    sprintf(end_file, "END_%03d.txt", aid);
+    sprintf(dirname, "AUCTIONS/%03d", aid);
+    n_entries = scandir(dirname, &entrylist, 0, NULL);
+    if (n_entries <= 0)
+    {
+        free(entrylist);
+        return 0;
+    }
+    while (n_entries--)
+    {
+        if (entrylist[n_entries]->d_type == DT_REG && strcmp(entrylist[n_entries]->d_name, end_file) == 0)
         {
-            // READ END FILE
-            // TALVEZ METER ISTO NUMA FUNCAO
-            char end_file_path[26];
-            sprintf(end_file_path, "AUCTIONS/%3d/END_%03d.txt", aid, aid);
+            char end_file_path[30];
+            sprintf(end_file_path, "AUCTIONS/%03d/END_%03d.txt", aid, aid);
             FILE *end_file = fopen(end_file_path, "r");
             if (end_file != NULL)
             {
-                if (fscanf(end_file, "%4d−%02d−%02d %02d:%02d:%02d %ld",
-                           &auc->end_datetime->tm_year, &auc->end_datetime->tm_mon, &auc->end_datetime->tm_mday,
-                           &auc->end_datetime->tm_hour, &auc->end_datetime->tm_min, &auc->end_datetime->tm_sec,
-                           &auc->end_sec_time) == 7)
-                {
-                    fclose(end_file);
-                    free(entrylist[n_entries]); // Free memory for each entry
-                    break;
-                }
+                int year, month, day, hour, minute, second;
+                fscanf(end_file, "%4d-%02d-%02d %02d:%02d:%02d %d",
+                       &year, &month, &day, &hour, &minute, &second,
+                       &auc->end_sec_time);
+                auc->end_datetime->tm_year = year;
+                auc->end_datetime->tm_mon = month;
+                auc->end_datetime->tm_mday = day;
+                auc->end_datetime->tm_hour = hour;
+                auc->end_datetime->tm_min = minute;
+                auc->end_datetime->tm_sec = second;
                 fclose(end_file);
+                return 1;
             }
-            free(entrylist[n_entries]); // Free memory for each entry
         }
-        else if (entrylist[n_entries]->d_type == DT_DIR && strcmp(entrylist[n_entries]->d_name, "BIDS") == 0)
-        {
-            // READ BIDS FOLDER
-            // TALVEZ METER ISTO NUMA FUNCAO
-            char bids_folder_path[20];
-            sprintf(bids_folder_path, "AUCTIONS/%03d/BIDS", aid);
-            int no_bids = GetBidList(aid, &list);
-            if (no_bids == 0)
-            {
-                free(entrylist[n_entries]); // Free memory for each entry
-                break;
-            }
-            free(entrylist[n_entries]); // Free memory for each entry
-        }
-        free(entrylist[n_entries]); // Free memory for each entry
+        free(entrylist[n_entries]);
     }
-    free(entrylist); // Free the entryList array
-    return auction_folder_found;
+    free(entrylist);
+    return 0;
 }
 
 int GetHostedAuctionlist(char uid[], AUCTIONLIST *list)
@@ -916,7 +939,7 @@ int GetHostedAuctionlist(char uid[], AUCTIONLIST *list)
     char dirname[21];
     char pathname[32];
     sprintf(dirname, "USERS/%s/HOSTED/", uid);
-    nentries = scandir(dirname, &filelist, 0, alphasort);
+    nentries = scandir(dirname, &filelist, 0, NULL);
     if (nentries <= 0)
         return 0;
     naucs = 0;
@@ -924,15 +947,13 @@ int GetHostedAuctionlist(char uid[], AUCTIONLIST *list)
     while (nentries--)
     {
         len = strlen(filelist[nentries]->d_name);
-        if (len == 10)
+        if (len == 7)
         {
             sprintf(pathname, "USERS/%s/HOSTED/%s", uid, filelist[nentries]->d_name);
-            if (LoadAuction(pathname, list))
+            if (LoadAuction(filelist[nentries]->d_name, list))
                 ++naucs;
         }
         free(filelist[nentries]);
-        if (naucs == 50)
-            break;
     }
     free(filelist);
     return naucs;
@@ -940,23 +961,16 @@ int GetHostedAuctionlist(char uid[], AUCTIONLIST *list)
 
 int LoadAuction(const char *filepath, AUCTIONLIST *list)
 {
-    // TODO LOAD proper auction
-    // Extract the AID from the filename
-    char *filepath_copy = strdup(filepath);
-    char *token = strtok(filepath_copy, ".");
-    if (token != NULL)
+    if (sscanf(filepath, "%03d.txt", &list->aucs[list->no_aucs]) == 1)
     {
-        int auctionID = atoi(token);
-        // Store the auction ID in the AUCTIONLIST structure
-        if (list->no_aucs < 50)
-        {
-            list->aucs[list->no_aucs++] = auctionID;
-            free(filepath_copy);
-            return 1; // Success
-        }
+        printf("AID: %d\n", list->aucs[list->no_aucs]);
+        ++list->no_aucs;
+        return 1;
     }
-    free(filepath_copy);
-    return 0; // Failed to load auction or list full
+    else
+    {
+        return 0;
+    }
 }
 
 int GetBiddedAuctionlist(char uid[], AUCTIONLIST *list)
@@ -966,7 +980,7 @@ int GetBiddedAuctionlist(char uid[], AUCTIONLIST *list)
     char dirname[21];
     char pathname[32];
     sprintf(dirname, "USERS/%s/BIDDED/", uid);
-    nentries = scandir(dirname, &filelist, 0, alphasort);
+    nentries = scandir(dirname, &filelist, 0, NULL);
     if (nentries <= 0)
         return 0;
     naucs = 0;
@@ -974,15 +988,13 @@ int GetBiddedAuctionlist(char uid[], AUCTIONLIST *list)
     while (nentries--)
     {
         len = strlen(filelist[nentries]->d_name);
-        if (len == 10)
+        if (len == 7)
         {
             sprintf(pathname, "USERS/%s/BIDDED/%s", uid, filelist[nentries]->d_name);
-            if (LoadAuction(pathname, list))
+            if (LoadAuction(filelist[nentries]->d_name, list))
                 ++naucs;
         }
         free(filelist[nentries]);
-        if (naucs == 50)
-            break;
     }
     free(filelist);
     return naucs;
@@ -992,10 +1004,10 @@ int GetBidList(int AID, BIDLIST *list)
 {
     struct dirent **filelist;
     int nentries, nbids, len;
-    char dirname[20];
+    char dirname[32];
     char pathname[32];
-    sprintf(dirname, "AUCTIONS/%03d/BIDS/", AID);
-    nentries = scandir(dirname, &filelist, 0, alphasort);
+    sprintf(dirname, "AUCTIONS/%03d/BIDS", AID);
+    nentries = scandir(dirname, &filelist, 0, reverseAlphasort);
     if (nentries <= 0)
         return 0;
     nbids = 0;
@@ -1005,6 +1017,7 @@ int GetBidList(int AID, BIDLIST *list)
         len = strlen(filelist[nentries]->d_name);
         if (len == 10)
         {
+            printf("Hello\n");
             sprintf(pathname, "AUCTIONS/%03d/BIDS/%s", AID, filelist[nentries]->d_name);
             if (LoadBid(pathname, list))
                 ++nbids;
@@ -1024,7 +1037,7 @@ int GetAuctionlist(AUCTIONLIST *list)
     char dirname[11];
     char pathname[32];
     sprintf(dirname, "AUCTIONS/");
-    nentries = scandir(dirname, &filelist, 0, alphasort);
+    nentries = scandir(dirname, &filelist, 0, reverseAlphasort);
     if (nentries <= 0)
         return 0;
     naucs = 0;
@@ -1035,7 +1048,7 @@ int GetAuctionlist(AUCTIONLIST *list)
         if (len == 3)
         {
             sprintf(pathname, "AUCTIONS/%s", filelist[nentries]->d_name);
-            if (LoadAuction(pathname, list))
+            if (LoadAuction(filelist[nentries]->d_name, list))
                 ++naucs;
         }
         free(filelist[nentries]);
@@ -1055,14 +1068,19 @@ int LoadBid(const char *filepath, BIDLIST *list)
 
     if (list->no_bids < 50)
     {
-        BIDINFO *current_bid = &list->bids[list->no_bids];
-        if (fscanf(file, "%s %6d %4d−%02d−%02d %02d:%02d:%02d %ld",
-                   current_bid->UID,
-                   &current_bid->bid_value,
-                   &current_bid->bid_datetime->tm_year,
-                   &current_bid->bid_datetime->tm_mon, &current_bid->bid_datetime->tm_mday, &current_bid->bid_datetime->tm_hour,
-                   &current_bid->bid_datetime->tm_min, &current_bid->bid_datetime->tm_sec, &current_bid->bid_sec_time) == 9)
+        list->bids[list->no_bids].bid_datetime = (struct tm *)malloc(sizeof(struct tm));
+        int year, month, day, hour, minute, second;
+        if (fscanf(file, "%s %d %4d-%02d-%02d %02d:%02d:%02d %ld",
+                   list->bids[list->no_bids].UID, &list->bids[list->no_bids].bid_value,
+                   year, month, day, hour, minute, second, &list->bids[list->no_bids].bid_sec_time) == 9)
         {
+
+            list->bids[list->no_bids].bid_datetime->tm_year = year;
+            list->bids[list->no_bids].bid_datetime->tm_mon = month;
+            list->bids[list->no_bids].bid_datetime->tm_mday = day;
+            list->bids[list->no_bids].bid_datetime->tm_hour = hour;
+            list->bids[list->no_bids].bid_datetime->tm_min = minute;
+            list->bids[list->no_bids].bid_datetime->tm_sec = second;
             list->no_bids++;
             fclose(file);
             return 1; // Return 1 to indicate success
@@ -1085,10 +1103,13 @@ int GetHighestBid(int AID)
         return 0;
     while (nentries--)
     {
+        int len = strlen(filelist[nentries]->d_name);
         if (len == 10)
         {
             int bid_value;
-            sscanf(filelist[nentries]->d_name, "%06d.txt", &bid_value);
+            char bid_value_str[7];
+            sscanf(filelist[nentries]->d_name, "%s.txt", bid_value_str);
+            bid_value = atoi(bid_value_str);
             if (bid_value > highest_bid)
                 highest_bid = bid_value;
         }
@@ -1100,10 +1121,54 @@ int GetHighestBid(int AID)
 
 void DisplayAuctions(AUCTIONLIST *list, char *response)
 {
-    // TODO VER SE TA ATIVO OU NAO
+    // Clear the response string before using it
+    response[0] = '\0';
+
     for (int i = 0; i < list->no_aucs; ++i)
     {
-        sprintf(response + strlen(response), " %03d 0", list->aucs[i]);
+        // TODO consideracao de auction ativo ou nao
+        int active = CheckAuctionActive(list->aucs[i]);
+        if (active == 2)
+        {
+            active = 0;
+            create_end_file(list->aucs[i]);
+        }
+        // Append the contents of each iteration to the response string
+        char temp[100]; // Adjust the size accordingly
+        sprintf(temp, " %03d %d", list->aucs[i], active);
+        strcat(response, temp);
+    }
+}
+
+int CheckAuctionActive(int aid)
+{
+    char end_file_path[30];
+    sprintf(end_file_path, "AUCTIONS/%03d/END_%03d.txt", aid, aid);
+    if (access(end_file_path, F_OK) != -1)
+    {
+        // End_File exists
+        return 0;
+    }
+    else
+    {
+        // End_File does not exist
+        // Check if duration of the auction has passed
+        long start_fulltime = getAuctionTime(aid);
+        int duration = getAuctionDuration(aid);
+        time_t end_time;
+        time(&end_time);
+        double time_passed = (long)end_time - start_fulltime;
+        printf("end: %ld\n", (long)end_time);
+        printf("start: %ld\n", start_fulltime);
+        printf("duration: %d\n", duration);
+        if (time_passed >= duration)
+        {
+            return 2;
+        }
+        else
+        {
+            return 1;
+        }
     }
 }
 
@@ -1112,12 +1177,12 @@ char *DisplayRecord(AUCTIONINFO *auc, BIDLIST *list)
     // Calculate the size of the response string
     // 6 = start_value, 5 = timeactive, 19 = start_date-time, 1 = '\0', 5 = spaces
     int size = UID_SIZE + strlen(auc->name) + strlen(auc->asset_fname) + 6 + 5 + 19 + 1 + 5;
-    if (list->no_bids != 0)
+    if (list != NULL)
     {
         // 3 = ' B ', 6 = bid_value, 19 = bid_date-time, 6 = bid_sec_time, 1 = '\0', 3 = spaces
         size += list->no_bids * (3 + UID_SIZE + 6 + 19 + 6 + 1 + 3);
     }
-    if (auc->end_sec_time == 0)
+    if (auc->end_datetime != NULL)
     {
         // 3 = ' E ', 19 = end_date-time, 6 = end_sec_time, 1 = '\0', 1 = spaces
         size += list->no_bids * (3 + 19 + 6 + 1 + 1);
@@ -1126,28 +1191,42 @@ char *DisplayRecord(AUCTIONINFO *auc, BIDLIST *list)
     // Allocate memory for the response string
     char *response = (char *)malloc(size * sizeof(char));
 
+    //  printf("%d", auc->start_value);
+    //  printf("%d", auc->timeactive);
+    //  printf("%4d-%02d-%02d %02d:%02d:%02d", auc->start_datetime->tm_year, auc->start_datetime->tm_mon, auc->start_datetime->tm_mday,
+    //        auc->start_datetime->tm_hour, auc->start_datetime->tm_min, auc->start_datetime->tm_sec);
+
     // Write the auction info to the response string
-    sprintf(response, "%s %s %s %d %ld %4d−%02d−%02d %02d:%02d:%02d %ld",
+    sprintf(response, "%s %s %s %d %d %4d-%02d-%02d %02d:%02d:%02d %d",
             auc->uid, auc->name, auc->asset_fname, auc->start_value, auc->timeactive,
             auc->start_datetime->tm_year, auc->start_datetime->tm_mon, auc->start_datetime->tm_mday,
             auc->start_datetime->tm_hour, auc->start_datetime->tm_min, auc->start_datetime->tm_sec, auc->timeactive);
 
     // Write the bid info to the response string
-    for (int i = 0; i < list->no_bids; ++i)
+    if (list != NULL)
     {
-        sprintf(response + strlen(response), " B %s %d %4d−%02d−%02d %02d:%02d:%02d %ld",
-                list->bids[i].UID, list->bids[i].bid_value,
-                list->bids[i].bid_datetime->tm_year, list->bids[i].bid_datetime->tm_mon, list->bids[i].bid_datetime->tm_mday,
-                list->bids[i].bid_datetime->tm_hour, list->bids[i].bid_datetime->tm_min, list->bids[i].bid_datetime->tm_sec,
-                list->bids[i].bid_sec_time);
+        for (int i = 0; i < list->no_bids; ++i)
+        {
+            if (list->bids[i].bid_datetime != NULL)
+            {
+                char temp[512];
+                sprintf(temp, " B %s %d %4d-%02d-%02d %02d:%02d:%02d %d",
+                        list->bids[i].UID, list->bids[i].bid_value,
+                        list->bids[i].bid_datetime->tm_year, list->bids[i].bid_datetime->tm_mon, list->bids[i].bid_datetime->tm_mday,
+                        list->bids[i].bid_datetime->tm_hour, list->bids[i].bid_datetime->tm_min, list->bids[i].bid_datetime->tm_sec,
+                        list->bids[i].bid_sec_time);
+                strcat(response, temp);
+            }
+        }
     }
-    // Here i can check if struct end_date_time is null instead
-    if (auc->end_sec_time == 0)
+
+    if (auc->end_datetime != NULL)
     {
-        sprintf(response + strlen(response), " E %4d−%02d−%02d %02d:%02d:%02d %ld",
+        sprintf(response + strlen(response), " E %4d-%02d-%02d %02d:%02d:%02d %d",
                 auc->end_datetime->tm_year, auc->end_datetime->tm_mon, auc->end_datetime->tm_mday,
                 auc->end_datetime->tm_hour, auc->end_datetime->tm_min, auc->end_datetime->tm_sec, auc->end_sec_time);
     }
+    strcat(response, "\n");
     return response;
 }
 
@@ -1217,9 +1296,10 @@ int auctionExists(int AID)
 int isOwner(int aid, char uid[])
 {
     // TODO mudar dps pa lookup ao uid
-    AUCTIONINFO auc = getAuction(aid);
+    char uid_test[UID_SIZE];
+    getAuctionUID(aid, uid_test);
     // Check if the user is the owner of the auction
-    if (strcmp(uid, auc.uid) == 0)
+    if (strcmp(uid, uid_test) == 0)
     {
         return 1;
     }
@@ -1261,50 +1341,65 @@ int isAuctionEnded(int aid)
     return end_file_found;
 }
 
-AUCTIONINFO getAuction(int aid)
+void getAuctionUID(int aid, char uid[])
 {
-    AUCTIONINFO auc;
-    struct dirent **entrylist;
-    char dirname[15];
-    sprintf(dirname, "AUCTIONS/%03d", aid);
-    int n_entries = scandir(dirname, &entrylist, NULL, alphasort);
-    if (n_entries < 0)
+    char filename[30];
+    sprintf(filename, "AUCTIONS/%03d/START_%03d.txt", aid, aid);
+    FILE *file = fopen(filename, "r");
+    if (file == NULL)
     {
-        perror("scandir");
-        return auc;
+        perror("Error opening start file");
+        return NULL;
     }
-    // Care here on the loop for later should work for now
-    char start_file[21];
-    sprintf(start_file, "START_%03d.txt", aid);
-    while (n_entries--)
+    fscanf(file, "%s ", uid);
+    fclose(file);
+    return uid;
+}
+
+long getAuctionTime(int aid)
+{
+    char filename[30];
+    sprintf(filename, "AUCTIONS/%03d/START_%03d.txt", aid, aid);
+    FILE *file = fopen(filename, "r");
+    if (file == NULL)
     {
-        if (entrylist[n_entries]->d_type == DT_REG && strcmp(entrylist[n_entries]->d_name, start_file) == 0)
-        {
-            // READ START FILE
-            // TALVEZ METER ISTO NUMA FUNCAO
-            char start_file_path[30];
-            sprintf(start_file_path, "AUCTIONS/%03d/START_%03d.txt", aid, aid);
-            FILE *start_file = fopen(start_file_path, "r");
-            if (start_file != NULL)
-            {
-                if (fscanf(start_file, "%s %s %s %d %ld %4d−%02d−%02d %02d:%02d:%02d %ld",
-                           auc.uid, auc.name, auc.asset_fname, &auc.start_value, &auc.timeactive,
-                           &auc.start_datetime->tm_year, &auc.start_datetime->tm_mon, &auc.start_datetime->tm_mday,
-                           &auc.start_datetime->tm_hour, &auc.start_datetime->tm_min, &auc.start_datetime->tm_sec,
-                           &auc.timeactive) == 12)
-                {
-                    fclose(start_file);
-                    free(entrylist[n_entries]); // Free memory for each entry
-                    break;
-                }
-                fclose(start_file);
-            }
-            free(entrylist[n_entries]); // Free memory for each entry
-        }
-        free(entrylist[n_entries]); // Free memory for each entry
+        return 0;
     }
-    free(entrylist); // Free the entryList array
-    return auc;
+    long start_fulltime;
+    printf("Hello\n");
+    fscanf(file, "%*s %*s %*s %*d %*d %*d-%*d-%*d %*d:%*d:%*d %ld", &start_fulltime);
+    fclose(file);
+    return start_fulltime;
+}
+
+int getAuctionDuration(int aid)
+{
+    char filename[30];
+    sprintf(filename, "AUCTIONS/%03d/START_%03d.txt", aid, aid);
+    FILE *file = fopen(filename, "r");
+    if (file == NULL)
+    {
+        return 0;
+    }
+    int duration;
+    fscanf(file, "%*s %*s %*s %*d %d", &duration);
+    fclose(file);
+    return duration;
+}
+
+int getAuctionStartValue(int aid)
+{
+    char filename[30];
+    sprintf(filename, "AUCTIONS/%03d/START_%03d.txt", aid, aid);
+    FILE *file = fopen(filename, "r");
+    if (file == NULL)
+    {
+        return 0;
+    }
+    int start_value;
+    fscanf(file, "%*s %*s %*s %d ", &start_value);
+    fclose(file);
+    return start_value;
 }
 
 int check_auction_name(char auction_name[])

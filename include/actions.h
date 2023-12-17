@@ -46,7 +46,7 @@ typedef struct AUCTIONINFO
     int start_value;                  // Up to 6 digits
     int timeactive;                   // represented up to 5 digits
     struct tm *start_datetime;
-    time_t start_fulltime;
+    int start_fulltime;
     // END
     struct tm *end_datetime; // TODO APAGAR ACHO Q N USO
     int end_sec_time;        // TODO APAGAR ACHO Q N USO
@@ -63,7 +63,7 @@ typedef struct BIDINFO
     char UID[UID_SIZE];
     int bid_value;
     struct tm *bid_datetime;
-    time_t bid_sec_time;
+    int bid_sec_time;
 } BIDINFO;
 
 typedef struct
@@ -126,7 +126,7 @@ int GetAuctionlist(AUCTIONLIST *list);
 int LoadBid(const char *filepath, BIDLIST *list);
 void DisplayAuctions(AUCTIONLIST *list, char *response);
 char *DisplayRecord(AUCTIONINFO *auc, BIDLIST *list);
-AUCTIONINFO getAuction(int aid);
+long getAuctionTime(int aid);
 // CHECKS NOT LOOKUPS
 int check_auction_name(char auction_name[]);
 int check_file_name(char file_name[]);
