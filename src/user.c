@@ -539,6 +539,128 @@ void tcp_message(char buffer[], size_t size)
     close(fd);
 }
 
+/*
+void tcp_open_message(char reply[])
+{
+    int fd, errcode;
+    ssize_t n;
+    struct addrinfo hints, *res;
+    char receive_buffer[8193];
+
+    char auction_name[33], file_name[33];
+    char start_value[8192], time_active[8192];
+    long int file_size;
+    int file_data;
+
+    if (sscanf(reply, "OPA %s %s %s %s %s %s %ld ", current_login_uid, current_login_pass, auction_name, file_name, start_value, time_active, &file_size) != 7)
+    {
+        printf("Failed to parse reply\n");
+        return;
+    }
+
+    fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd == -1)
+    {
+        exit(1);
+    }
+
+    memset(&hints, 0, sizeof hints);
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM; // TCP socket
+
+    errcode = getaddrinfo(ASIP, ASport, &hints, &res);
+    if (errcode != 0)
+    {
+        exit(1);
+    }
+    n = connect(fd, res->ai_addr, res->ai_addrlen);
+    if (n == -1)
+    {
+        exit(1);
+    }
+
+    int bytes_sent = 0;
+    off_t offset = strlen(reply);
+    while (bytes_sent < offset)
+    {
+        n = write(fd, reply + bytes_sent, strlen(reply));
+        if (n == -1)
+        {
+            perror("write");
+            exit(1);
+        }
+        bytes_sent += n;
+    }
+
+    int file;
+    file = open(file_name, O_RDONLY);
+    if (file == -1)
+    {
+        perror("open");
+        exit(EXIT_FAILURE);
+    }
+
+    printf("bytes_sent: %d\n", bytes_sent);
+
+    size_t left = file_size;
+    offset = 0;
+    while (left > 0)
+    {
+        ssize_t bytes_sent = sendfile(fd, file, &offset, left);
+        printf("bytes_sent: %d\n", bytes_sent);
+        if (bytes_sent <= 0)
+        {
+            perror("sendfile");
+            exit(EXIT_FAILURE);
+        }
+        offset += bytes_sent;
+        left -= bytes_sent;
+    }
+    close(file);
+
+    n = write(fd, "\n", 1);
+    if (n == -1)
+    {
+        perror("write");
+        exit(1);
+    }
+
+    memset(receive_buffer, 0, sizeof(receive_buffer));
+
+    int bytes_read_total = 0;
+    while (bytes_read_total < 8192)
+    {
+        ssize_t bytes_read;
+        while ((bytes_read = read(fd, receive_buffer + bytes_read_total, 8192 - 1)) == -1)
+        {
+            if (errno == ECONNRESET)
+            {
+                continue;
+            }
+            else
+            {
+                perror("read");
+                exit(EXIT_FAILURE);
+            }
+        }
+        if (bytes_read == 0)
+        {
+            break;
+        }
+        bytes_read_total += bytes_read;
+    }
+
+    receive_buffer[bytes_read_total] = '\0';
+
+    tcp_message_handle(receive_buffer, strlen(receive_buffer));
+
+    memset(receive_buffer, 0, sizeof(receive_buffer));
+
+    freeaddrinfo(res);
+    close(fd);
+}
+*/
+
 void tcp(char buffer[], size_t size)
 {
 
