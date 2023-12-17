@@ -125,7 +125,6 @@ int login_user(char uid[], char pass[])
     else
     {
         // Register User
-        // TODO METER NUM IF PROBBLY ESTE CREATE USER FOLDER
         create_user_folder(uid, pass);
         return 2;
     }
@@ -254,8 +253,6 @@ int open_auction(AUCTIONINFO info, FILEINFO file, char *file_data, int *aid)
 
 int close_auction(USERINFO info, int aid)
 {
-    // Check if user is logged in
-    // PQ É Q EU RECEBO A PASS NO CLOSE??? É PARA VERIFICAR SE TA LOGGED IN? EU PROCURO SÓ PELO FICHEIRO LOGIN
     if (!LookUpUserLogin(info.uid))
     {
         // STATUS NLG
@@ -294,8 +291,6 @@ int show_asset(int aid, FILEINFO *file, char **file_data)
 
 int bid(USERINFO info, int aid, int bid_value)
 {
-    // ESTRANHO NO ENUNCIADO N DIZEM PARA CHECKAR SE O AUC EXISTE OU N
-    // PQ É Q EU RECEBO A PASS NO BID??? É PARA VERIFICAR SE TA LOGGED IN? EU PROCURO SÓ PELO FICHEIRO LOGIN
     // Check if user is logged in
     if (!auctionExists(aid))
     {
@@ -359,7 +354,6 @@ int create_user_folder(char uid[], char pass[])
     }
     else
     {
-        // TODO VER pq é q isto ta aqui meti mas ja n sei se faz sentido
         if (!create_pass_file(uid, pass))
         {
             rmdir(folder_Path);
@@ -397,7 +391,6 @@ int create_login_file(char uid[])
 {
     char login_file_path[30];
     FILE *login_file;
-    // checkam o comprimento de uid no Guia acho q n é preciso once again se fizermos num parse ou num verify
     sprintf(login_file_path, "USERS/%s/%s_login.txt", uid, uid);
     login_file = fopen(login_file_path, "w");
     if (login_file != NULL)
@@ -583,9 +576,7 @@ int create_asset_file(int aid, FILEINFO file, char *file_data)
     FILE *asset_file = fopen(asset_file_path, "wb");
     if (asset_file != NULL)
     {
-        // printf("file size: %d\n", file.file_size);
         size_t bytes_written = fwrite(file_data, 1, file.file_size, asset_file);
-        // printf("bytes written: %ld\n", bytes_written);
         if (bytes_written != file.file_size)
         {
             fprintf(stderr, "Error: Could not write the entire file_data to the file.\n");
@@ -647,14 +638,12 @@ int create_bids_folder(int aid)
 
 int create_bid_file(char uid[], int aid, int bid_value)
 {
-    // TODO get Auction only for start time
     long start_fulltime = getAuctionTime(aid);
     char bid_file_path[30];
     sprintf(bid_file_path, "AUCTIONS/%03d/BIDS/%06d.txt", aid, bid_value);
     FILE *bid_file = fopen(bid_file_path, "w");
     if (bid_file != NULL)
     {
-        // Care n sei se as contas são assim
         time_t full_time;
         struct tm *current_time;
         time(&full_time);
@@ -682,7 +671,6 @@ int LookUpUser(char uid[])
     {
         return 0;
     }
-    // Care here on the loop for later should work for now
     int pass_file_found = 0;
     while (n_entries--)
     {
@@ -726,7 +714,6 @@ int LookUpUserPassword(char uid[], char pass[])
 // Check Logged in
 int LookUpUserLogin(char uid[])
 {
-    // TODO CHECKAR SE A PASS É IGUAL TMB
     struct dirent **entrylist;
     char dirname[13];
     sprintf(dirname, "USERS/%s", uid);
@@ -735,7 +722,6 @@ int LookUpUserLogin(char uid[])
     {
         return 0;
     }
-    // Care here on the loop for later should work for now
     int logged_in = 0;
     for (int i = 0; i < n_entries; ++i)
     {
@@ -761,8 +747,6 @@ int LookUpAssetFile(int aid, FILEINFO *file, char **file_data)
     int n_entries = scandir(dirname, &entrylist, NULL, alphasort);
     if (n_entries < 0)
     {
-        // TODO REMOVE Perror
-        perror("scandir");
         return 0;
     }
     int asset_file_found = 0;
@@ -1087,8 +1071,6 @@ int LoadBid(const char *filepath, BIDLIST *list)
 
 int GetHighestBid(int AID)
 {
-    // TMB N SEI SE TENHO DE VER O START_VALUE DO AUCTION PRIMEIRO TMB??? N DIZEM ND SOBRE ISSO
-    // Assumo q sim
     struct dirent **filelist;
     int nentries, len, highest_bid = 0;
     char dirname[20];
@@ -1121,7 +1103,6 @@ void DisplayAuctions(AUCTIONLIST *list, char *response)
 
     for (int i = 0; i < list->no_aucs; ++i)
     {
-        // TODO consideracao de auction ativo ou nao
         int active = CheckAuctionActive(list->aucs[i]);
         if (active == 2)
         {
@@ -1300,7 +1281,6 @@ int isOwner(int aid, char uid[])
 int isAuctionEnded(int aid)
 {
     // Check for End file
-    // CUIDADO CHECKAR TMB SE O TEMPO NAO EXPIROU !!!
     struct dirent **entrylist;
     char dirname[15];
     sprintf(dirname, "AUCTIONS/%03d", aid);
@@ -1409,7 +1389,6 @@ int check_auction_name(char auction_name[])
 
 int check_file_name(char file_name[])
 {
-    // TODO TAS SO A CHECKAR NA DIRETORIA TENS DE CHECKAR NO PC EM GERAL E DEVOLVER O REAL PATH ACHO EU MAS YAH
     FILE *file_readed;
     file_readed = fopen(file_name, "r");
     if (file_readed == NULL)

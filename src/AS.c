@@ -14,7 +14,6 @@ char buffer[10106128];
 char *ASport = GROUP_PORT; // Chanhge to GROUO PORT
 int verbose = 0;
 
-// TODO ACHO Q N PRECISO DE PASSAR ESTES ARGS MAS YAH
 void udp_message_handle(ssize_t n, char buffer[])
 {
     char *reply = (char *)malloc(9 * sizeof(char));
