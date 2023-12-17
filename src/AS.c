@@ -11,7 +11,7 @@ struct addrinfo udp_hints, *udp_res;
 struct sockaddr_in udp_addr;
 char buffer[10106128];
 
-char *ASport = DEFAULT_PORT; // Chanhge to GROUO PORT
+char *ASport = GROUP_PORT; // Chanhge to GROUO PORT
 int verbose = 0;
 
 // TODO ACHO Q N PRECISO DE PASSAR ESTES ARGS MAS YAH
@@ -35,14 +35,20 @@ void udp_message_handle(ssize_t n, char buffer[])
             case 0:
                 strcpy(status, "NOK");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("Wrong credentials.\n");
                 break;
             case 1:
                 strcpy(status, "OK");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("User logged in.\n");
                 break;
             case 2:
                 strcpy(status, "REG");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("User not registered.\n");
                 break;
             }
         }
@@ -50,7 +56,8 @@ void udp_message_handle(ssize_t n, char buffer[])
         {
             strcpy(reply_code, "ERR");
             sprintf(reply, "%s\n", reply_code);
-            printf("Invalid credentials.\n");
+            if (verbose)
+                printf("Invalid credentials.\n");
         }
     }
     else if (strcmp(code, "LOU") == 0) // Logout
@@ -67,14 +74,20 @@ void udp_message_handle(ssize_t n, char buffer[])
             case 0:
                 strcpy(status, "NOK");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("User not logged in.\n");
                 break;
             case 1:
                 strcpy(status, "OK");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("User logged out.\n");
                 break;
             case 2:
                 strcpy(status, "UNR");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("User not registered.\n");
                 break;
             }
         }
@@ -82,7 +95,8 @@ void udp_message_handle(ssize_t n, char buffer[])
         {
             strcpy(reply_code, "ERR");
             sprintf(reply, "%s\n", reply_code);
-            printf("Invalid credentials.\n");
+            if (verbose)
+                printf("Invalid credentials.\n");
         }
     }
     else if (strcmp(code, "UNR") == 0) // Unregister
@@ -99,14 +113,20 @@ void udp_message_handle(ssize_t n, char buffer[])
             case 0:
                 strcpy(status, "NOK");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("User not logged in.\n");
                 break;
             case 1:
                 strcpy(status, "OK");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("User unregistered.\n");
                 break;
             case 2:
                 strcpy(status, "UNR");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("User not registered.\n");
                 break;
             }
         }
@@ -114,7 +134,8 @@ void udp_message_handle(ssize_t n, char buffer[])
         {
             strcpy(reply_code, "ERR");
             sprintf(reply, "%s\n", reply_code);
-            printf("Invalid credentials.\n");
+            if (verbose)
+                printf("Invalid credentials.\n");
         }
     }
     else if (strcmp(code, "LMA") == 0) // MyActions
@@ -132,10 +153,14 @@ void udp_message_handle(ssize_t n, char buffer[])
             case 0:
                 strcpy(status, "NOK");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("User has no ongoing auctions.\n");
                 break;
             case 2:
                 strcpy(status, "NLG");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("User not logged in.\n");
                 break;
             case 1:
             {
@@ -146,6 +171,8 @@ void udp_message_handle(ssize_t n, char buffer[])
                 reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 3) * sizeof(char));
                 sprintf(reply, "%s %s%s\n", reply_code, status, response);
                 free(response);
+                if (verbose)
+                    printf("User has %d auctions.\n", list.no_aucs);
                 break;
             }
             }
@@ -154,7 +181,8 @@ void udp_message_handle(ssize_t n, char buffer[])
         {
             strcpy(reply_code, "ERR");
             sprintf(reply, "%s\n", reply_code);
-            printf("Invalid credentials.\n");
+            if (verbose)
+                printf("Invalid credentials.\n");
         }
     }
     else if (strcmp(code, "LMB") == 0) // MyBids
@@ -172,10 +200,14 @@ void udp_message_handle(ssize_t n, char buffer[])
             case 0:
                 strcpy(status, "NOK");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("User has no ongoing bids.\n");
                 break;
             case 2:
                 strcpy(status, "NLG");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("User not logged in.\n");
                 break;
             case 1:
             {
@@ -185,6 +217,8 @@ void udp_message_handle(ssize_t n, char buffer[])
                 reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 3) * sizeof(char));
                 sprintf(reply, "%s %s%s\n", reply_code, status, response);
                 free(response);
+                if (verbose)
+                    printf("User has %d bids.\n", list.no_aucs);
                 break;
             }
             }
@@ -193,7 +227,8 @@ void udp_message_handle(ssize_t n, char buffer[])
         {
             strcpy(reply_code, "ERR");
             sprintf(reply, "%s\n", reply_code);
-            printf("Invalid credentials.\n");
+            if (verbose)
+                printf("Invalid credentials.\n");
         }
     }
     else if (strcmp(code, "LST") == 0) // List
@@ -207,6 +242,8 @@ void udp_message_handle(ssize_t n, char buffer[])
         case 0:
             strcpy(status, "NOK");
             sprintf(reply, "%s %s\n", reply_code, status);
+            if (verbose)
+                printf("No auctions started.\n");
             break;
         case 1:
         {
@@ -216,6 +253,8 @@ void udp_message_handle(ssize_t n, char buffer[])
             reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(response) + 3) * sizeof(char));
             sprintf(reply, "%s %s%s\n", reply_code, status, response);
             free(response);
+            if (verbose)
+                printf("There are %d auctions.\n", list.no_aucs);
             break;
         }
         }
@@ -237,6 +276,8 @@ void udp_message_handle(ssize_t n, char buffer[])
             case 0:
                 strcpy(status, "NOK");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("Auction not found.\n");
                 break;
             case 1:
             {
@@ -249,6 +290,8 @@ void udp_message_handle(ssize_t n, char buffer[])
                 sprintf(reply, "%s %s ", reply_code, status);
                 strcat(reply, response);
                 free(response);
+                if (verbose)
+                    printf("Auction found.\n");
                 break;
             }
             }
@@ -257,14 +300,16 @@ void udp_message_handle(ssize_t n, char buffer[])
         {
             strcpy(reply_code, "ERR");
             sprintf(reply, "%s\n", reply_code);
-            printf("Invalid credentials.\n");
+            if (verbose)
+                printf("Invalid credentials.\n");
         }
     }
     else
     {
         strcpy(reply_code, "ERR");
         sprintf(reply, "%s\n", reply_code);
-        printf("Invalid handle input.\n");
+        if (verbose)
+            printf("Invalid Code Recived.\n");
     }
 
     // Send the Code Reply
@@ -277,13 +322,12 @@ void udp_message_handle(ssize_t n, char buffer[])
     free(reply);
 }
 
-// TODO ACHO Q N PRECISO DE PASSAR ESTES ARGS MAS YAH
 void tcp_message_handle(char buffer[], int tcp_socket)
 {
     char *reply = (char *)malloc(9);
     char code[4];
     char reply_code[4];
-    sscanf(buffer, "%s ", code);  // TODO VERIFICAR SE TOU A RECEBER A MSG COM \n NO FIM !!!
+    sscanf(buffer, "%s ", code);
     if (strcmp(code, "OPA") == 0) // Open
     {
         char uid[UID_SIZE], pass[PASS_SIZE];
@@ -293,7 +337,7 @@ void tcp_message_handle(char buffer[], int tcp_socket)
         strcpy(reply_code, "ROA");
         if (check_open_credentials(auction_name, file_name, start_value, time_active) && verify_user_credentials(uid, pass))
         {
-            char *file_data = (char *)malloc((atoi(file_size) + 1) * sizeof(char)); // TODO MUDAR ISTO PARA O TAMANHO DO FICHEIRO COM FILE_SIZE
+            char *file_data = (char *)malloc((atoi(file_size) + 1) * sizeof(char));
             char *file_data_start = buffer;
             for (int i = 0; i < 8; i++)
             {
@@ -306,7 +350,6 @@ void tcp_message_handle(char buffer[], int tcp_socket)
             }
             size_t file_data_size = buffer + n - file_data_start;
             memcpy(file_data, file_data_start, file_data_size);
-            // printf("file_data: %s", file_data);
             char status[4];
             AUCTIONINFO info;
             FILEINFO file;
@@ -324,14 +367,20 @@ void tcp_message_handle(char buffer[], int tcp_socket)
             case 0:
                 strcpy(status, "NOK");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("Auction could not be started.\n");
                 break;
             case 1:
                 strcpy(status, "OK");
                 sprintf(reply, "%s %s %03d\n", reply_code, status, aid);
+                if (verbose)
+                    printf("Auction started.\n");
                 break;
             case 2:
                 strcpy(status, "NLG");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("User not logged in.\n");
                 break;
             }
         }
@@ -339,7 +388,8 @@ void tcp_message_handle(char buffer[], int tcp_socket)
         {
             strcpy(reply_code, "ERR");
             sprintf(reply, "%s\n", reply_code);
-            printf("Invalid credentials.\n");
+            if (verbose)
+                printf("Invalid credentials.\n");
         }
     }
     else if (strcmp(code, "CLS") == 0) // Close
@@ -360,22 +410,32 @@ void tcp_message_handle(char buffer[], int tcp_socket)
             case 0:
                 strcpy(status, "NLG");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("User not logged in.\n");
                 break;
             case 1:
                 strcpy(status, "EAU");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("Auction does not exist.\n");
                 break;
             case 2:
                 strcpy(status, "EOW");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("Auction owned by User.\n");
                 break;
             case 3:
                 strcpy(status, "END");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("Auction has already ended.\n");
                 break;
             case 4:
                 strcpy(status, "OK");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("Auction closed.\n");
                 break;
             }
         }
@@ -383,7 +443,8 @@ void tcp_message_handle(char buffer[], int tcp_socket)
         {
             strcpy(reply_code, "ERR");
             sprintf(reply, "%s\n", reply_code);
-            printf("Invalid credentials.\n");
+            if (verbose)
+                printf("Invalid credentials.\n");
         }
     }
     else if (strcmp(code, "SAS") == 0) // Show_asset
@@ -404,11 +465,15 @@ void tcp_message_handle(char buffer[], int tcp_socket)
             case 0:
                 strcpy(status, "NOK");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("There was a problem with the file.\n");
                 break;
             case 1:
                 strcpy(status, "OK");
                 reply = realloc(reply, (strlen(reply_code) + strlen(status) + strlen(info.file_name) + 8 + info.file_size + 6) * sizeof(char)); // 8- File size max
                 sprintf(reply, "%s %s %s %d %s\n", reply_code, status, info.file_name, info.file_size, file_data);
+                if (verbose)
+                    printf("File sent.\n");
                 break;
             }
             free(file_data);
@@ -417,7 +482,8 @@ void tcp_message_handle(char buffer[], int tcp_socket)
         {
             strcpy(reply_code, "ERR");
             sprintf(reply, "%s\n", reply_code);
-            printf("Invalid credentials.\n");
+            if (verbose)
+                printf("Invalid credentials.\n");
         }
     }
     else if (strcmp(code, "BID") == 0) // Bid
@@ -439,43 +505,56 @@ void tcp_message_handle(char buffer[], int tcp_socket)
             case 0:
                 strcpy(status, "NLG");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("User not logged in.\n");
                 break;
             case 1:
                 strcpy(status, "NOK");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("Auction not active.\n");
                 break;
             case 2:
                 strcpy(status, "ILG");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("Auction hosted by user.\n");
                 break;
             case 3:
                 strcpy(status, "REF");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("Bid value is lower than the current bid.\n");
                 break;
             case 4:
                 strcpy(status, "ACC");
                 sprintf(reply, "%s %s\n", reply_code, status);
+                if (verbose)
+                    printf("Bid accepted.\n");
                 break;
             case 5:
                 strcpy(reply_code, "ERR");
                 sprintf(reply, "%s\n", reply_code);
+                if (verbose)
+                    printf("Invalid credentials.\n");
             }
         }
         else
         {
             strcpy(reply_code, "ERR");
             sprintf(reply, "%s\n", reply_code);
-            printf("Invalid credentials.\n");
+            if (verbose)
+                printf("Invalid credentials.\n");
         }
     }
     else
     {
         strcpy(reply_code, "ERR");
         sprintf(reply, "%s\n", reply_code);
-        printf("Invalid handle input.\n");
+        if (verbose)
+            printf("Invalid Code Received.\n");
     }
 
-    // CUIDADO COM O CLOSE DO TCP N TENHO A CERTEZA SE TOU A FZR BEM
     /* Envia a mensagem recebida (atualmente presente no buffer) para a socket */
     n = write(tcp_socket, reply, strlen(reply));
     if (n == -1)
@@ -563,8 +642,6 @@ void server()
                 exit(1);
             }
 
-            printf("[UDP] Received: %.*s", (int)n, buffer);
-
             udp_message_handle(n, buffer);
         }
 
@@ -584,12 +661,9 @@ void server()
             if (n == -1)
                 exit(1);
 
-            printf("[TCP] Received: %.*s", (int)n, buffer);
-
             // Este n ta mt scuffed
             tcp_message_handle(buffer, tcp_socket);
 
-            // CUIDADO COM O CLOSE DO TCP N TENHO A CERTEZA SE TOU A FZR BEM
             close(tcp_socket);
         }
     }
@@ -613,11 +687,9 @@ void server_arguments(int argc, char *argv[])
             break;
         default:
             abort();
-            // exit(EXIT_FAILURE);
+            exit(EXIT_FAILURE);
         }
     }
-
-    // validate_port(ASport);   Used in both files may be create new .c file
 }
 
 int main(int argc, char const *argv[])

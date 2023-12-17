@@ -838,10 +838,7 @@ int LookUpAuction(int aid, AUCTIONINFO *auc, BIDLIST *list)
     auc->start_datetime = (struct tm *)malloc(sizeof(struct tm));
     auc->end_datetime = (struct tm *)malloc(sizeof(struct tm));
     auction_folder_found = ReadStartFile(aid, auc);
-    printf("Auction ID: %s\n", auc->uid);
-    printf("Start Year: %d\n", auc->start_datetime->tm_year);
     ReadEndFile(aid, auc);
-    printf("END Year: %d\n", auc->end_datetime->tm_year);
     GetBidList(aid, list);
     return auction_folder_found;
 }
@@ -963,7 +960,6 @@ int LoadAuction(const char *filepath, AUCTIONLIST *list)
 {
     if (sscanf(filepath, "%03d.txt", &list->aucs[list->no_aucs]) == 1)
     {
-        printf("AID: %d\n", list->aucs[list->no_aucs]);
         ++list->no_aucs;
         return 1;
     }
@@ -1017,7 +1013,6 @@ int GetBidList(int AID, BIDLIST *list)
         len = strlen(filelist[nentries]->d_name);
         if (len == 10)
         {
-            printf("Hello\n");
             sprintf(pathname, "AUCTIONS/%03d/BIDS/%s", AID, filelist[nentries]->d_name);
             if (LoadBid(pathname, list))
                 ++nbids;
@@ -1158,9 +1153,6 @@ int CheckAuctionActive(int aid)
         time_t end_time;
         time(&end_time);
         double time_passed = (long)end_time - start_fulltime;
-        printf("end: %ld\n", (long)end_time);
-        printf("start: %ld\n", start_fulltime);
-        printf("duration: %d\n", duration);
         if (time_passed >= duration)
         {
             return 2;
@@ -1190,11 +1182,6 @@ char *DisplayRecord(AUCTIONINFO *auc, BIDLIST *list)
 
     // Allocate memory for the response string
     char *response = (char *)malloc(size * sizeof(char));
-
-    //  printf("%d", auc->start_value);
-    //  printf("%d", auc->timeactive);
-    //  printf("%4d-%02d-%02d %02d:%02d:%02d", auc->start_datetime->tm_year, auc->start_datetime->tm_mon, auc->start_datetime->tm_mday,
-    //        auc->start_datetime->tm_hour, auc->start_datetime->tm_min, auc->start_datetime->tm_sec);
 
     // Write the auction info to the response string
     sprintf(response, "%s %s %s %d %d %4d-%02d-%02d %02d:%02d:%02d %d",
@@ -1366,7 +1353,6 @@ long getAuctionTime(int aid)
         return 0;
     }
     long start_fulltime;
-    printf("Hello\n");
     fscanf(file, "%*s %*s %*s %*d %*d %*d-%*d-%*d %*d:%*d:%*d %ld", &start_fulltime);
     fclose(file);
     return start_fulltime;

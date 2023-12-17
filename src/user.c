@@ -23,8 +23,8 @@ char buffer[1000]; // buffer para onde serão escritos os dados recebidos do ser
 
 char tcp_input[][11] = {"open", "close", "show_asset", "sa", "bid", "b"};
 
-char *ASIP = IP;
-char *ASport = DEFAULT_PORT;
+char *ASIP = NULL;
+char *ASport = GROUP_PORT;
 
 char current_login_uid[7];
 char current_login_pass[9];
